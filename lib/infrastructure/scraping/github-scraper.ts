@@ -115,13 +115,63 @@ export class GitHubScraper implements IGitHubScraper {
     const companyMatch = html.match(/<li[^>]*itemprop="worksFor"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/i);
     const company = companyMatch ? companyMatch[1].trim() : null;
     
-    // Extract blog
-    const blogMatch = html.match(/<a[^>]*rel="nofollow me"[^>]*href="([^"]+)"[^>]*>/i);
-    const blog = blogMatch ? blogMatch[1] : null;
+    // Extract social links
+    const socialLinks: { platform: string; url: string; username: string }[] = [];
     
-    // Extract Twitter
-    const twitterMatch = html.match(/<a[^>]*href="https:\/\/twitter\.com\/([^"]+)"[^>]*>/i);
-    const twitterUsername = twitterMatch ? twitterMatch[1] : null;
+    // Pattern for social links in the vcard
+    const socialPattern = /<li[^>]*itemprop="social"[^>]*>[\s\S]*?<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let socialMatch;
+    
+    while ((socialMatch = socialPattern.exec(html)) !== null) {
+      const href = socialMatch[1];
+      const text = socialMatch[2].replace(/<[^>]*>/g, '').trim();
+      
+      let platform = 'website';
+      let socialUsername = text || href;
+      
+      const lowerHref = href.toLowerCase();
+      if (lowerHref.includes('twitter.com') || lowerHref.includes('x.com')) {
+        platform = 'twitter';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('linkedin.com')) {
+        platform = 'linkedin';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('instagram.com')) {
+        platform = 'instagram';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('youtube.com')) {
+        platform = 'youtube';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('twitch.tv')) {
+        platform = 'twitch';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('dev.to')) {
+        platform = 'dev';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('medium.com')) {
+        platform = 'medium';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      } else if (lowerHref.includes('facebook.com')) {
+        platform = 'facebook';
+        socialUsername = href.split('/').filter(Boolean).pop()?.split('?')[0] || text;
+      }
+      
+      if (!socialLinks.find(l => l.url === href)) {
+        socialLinks.push({ platform, url: href, username: socialUsername });
+      }
+    }
+    
+    // Fallback for blog/website if not caught by itemprop="social"
+    if (!socialLinks.find(l => l.platform === 'website')) {
+      const blogMatch = html.match(/<li[^>]*itemprop="url"[^>]*>[\s\S]*?<a[^>]*href="([^"]+)"[^>]*>/i) ||
+                        html.match(/<a[^>]*rel="nofollow me"[^>]*href="([^"]+)"[^>]*>/i);
+      if (blogMatch) {
+        socialLinks.push({ platform: 'website', url: blogMatch[1], username: blogMatch[1] });
+      }
+    }
+    
+    const blog = socialLinks.find(l => l.platform === 'website')?.url || null;
+    const twitterUsername = socialLinks.find(l => l.platform === 'twitter')?.username || null;
     
     // Extract follower/following counts
     const followersMatch = html.match(/<a[^>]*href="[^"]*followers[^"]*"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/i) ||
@@ -150,6 +200,7 @@ export class GitHubScraper implements IGitHubScraper {
       following,
       publicRepos,
       profileUrl: url,
+      socialLinks,
     };
   }
   

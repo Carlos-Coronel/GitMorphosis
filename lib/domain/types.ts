@@ -14,6 +14,11 @@ export interface GitHubUser {
   following: number;
   publicRepos: number;
   profileUrl: string;
+  socialLinks?: {
+    platform: string;
+    url: string;
+    username: string;
+  }[];
 }
 
 export interface Repository {

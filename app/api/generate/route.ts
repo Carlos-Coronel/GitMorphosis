@@ -9,7 +9,7 @@ export const maxDuration = 60; // Allow up to 60 seconds for scraping
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, templateId = 'portfolio' } = body;
+    const { username, templateId = 'portfolio', socialLinks } = body;
     
     if (!username || typeof username !== 'string') {
       return NextResponse.json(
@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
     
     // Get profile and generate README
     const profile = await profileService.getProfile(cleanUsername);
+    
+    // Merge manual social links if provided
+    if (socialLinks && Array.isArray(socialLinks)) {
+      profile.user.socialLinks = socialLinks;
+    }
+
     const result = readmeBuilder.build(profile, templateId);
     
     return NextResponse.json({
