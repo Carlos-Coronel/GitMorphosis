@@ -57,7 +57,7 @@ function buildStatsUrl(
   }
   
   // Self-hosted API route
-  if (forceSelf && siteUrl) {
+  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
     const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
     return `${siteUrl}/api/stats?${p.toString()}`;
   }
@@ -92,7 +92,7 @@ function buildTopLangsUrl(
     return `${statsUrl}/api/top-langs/?${p.toString()}`;
   }
 
-  if (forceSelf && siteUrl) {
+  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
     const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
     return `${siteUrl}/api/top-langs?${p.toString()}`;
   }
@@ -124,7 +124,7 @@ function buildPinUrl(
     return `${statsUrl}/api/pin/?${p.toString()}`;
   }
 
-  if (forceSelf && siteUrl) {
+  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
     const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
     return `${siteUrl}/api/pin?${p.toString()}`;
   }

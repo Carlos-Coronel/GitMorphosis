@@ -107,6 +107,7 @@ export function ProfileGenerator() {
   const [streakUrl, setStreakUrl] = useState('https://streak-stats.demolab.com');
   const [serviceHealth, setServiceHealth] = useState<ServiceStatus[]>([]);
   const [forceSelfHosted, setForceSelfHosted] = useState(false);
+  const [isGitHubPages, setIsGitHubPages] = useState(false);
   const statsUrlRef = useRef('');
   const streakUrlRef = useRef('https://streak-stats.demolab.com');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -250,6 +251,9 @@ export function ProfileGenerator() {
 
   // Limpiar timer al desmontar y ejecutar health check
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsGitHubPages(window.location.hostname.includes('github.io'));
+    }
     getCachedServiceHealth().then(setServiceHealth);
     
     const interval = setInterval(() => {
@@ -404,24 +408,42 @@ export function ProfileGenerator() {
                 />
                 
                 <div className="border-t border-border/40 pt-5 space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="force-self-hosted" className="text-sm font-semibold flex items-center gap-2">
-                        <Server className="h-4 w-4 text-primary" />
-                        Usar Endpoints Propios (Recomendado)
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Ignora servicios externos inestables y usa la infraestructura de GitMorphosis para generar los SVGs.
-                      </p>
+                  <div className={cn(
+                    "flex flex-col gap-3 p-4 rounded-lg border",
+                    isGitHubPages 
+                      ? "bg-amber-500/5 border-amber-500/20" 
+                      : "bg-primary/5 border-primary/10"
+                  )}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="force-self-hosted" className="text-sm font-semibold flex items-center gap-2">
+                          <Server className="h-4 w-4 text-primary" />
+                          Usar Endpoints Propios
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {isGitHubPages 
+                            ? "No disponible en GitHub Pages (no soporta ejecución de /api en runtime)."
+                            : "Ignora servicios externos inestables y usa la infraestructura local."}
+                        </p>
+                      </div>
+                      <Switch
+                        id="force-self-hosted"
+                        checked={forceSelfHosted && !isGitHubPages}
+                        disabled={isGitHubPages}
+                        onCheckedChange={(val) => {
+                          setForceSelfHosted(val);
+                          if (currentUsernameRef.current) handleGenerate(currentUsernameRef.current);
+                        }}
+                      />
                     </div>
-                    <Switch
-                      id="force-self-hosted"
-                      checked={forceSelfHosted}
-                      onCheckedChange={(val) => {
-                        setForceSelfHosted(val);
-                        if (currentUsernameRef.current) handleGenerate(currentUsernameRef.current);
-                      }}
-                    />
+                    {isGitHubPages && (
+                      <div className="flex items-start gap-2 text-[10px] text-amber-600 dark:text-amber-400 leading-tight">
+                        <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                        <span>
+                          Para usar endpoints propios, despliega GitMorphosis en Vercel o un servidor con soporte Node.js. En GitHub Pages, la aplicación funciona 100% en el cliente y usa espejos públicos como fallback.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
