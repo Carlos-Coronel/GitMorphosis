@@ -168,7 +168,7 @@ export function ProfileGenerator() {
         statsUrl: statsUrlRef.current || undefined,
         streakUrl: streakUrlRef.current,
         siteUrl,
-        forceSelfHosted,
+        forceSelfHosted: forceSelfHosted && !isGitHubPages,
         serviceStatus,
       });
 
@@ -190,7 +190,7 @@ export function ProfileGenerator() {
       setIsLoading(false);
       setLoadingStep('');
     }
-  }, []);
+  }, [isGitHubPages, serviceHealth, forceSelfHosted]);
 
   const handleTemplateChange = useCallback((templateId: string) => {
     setSelectedTemplate(templateId);

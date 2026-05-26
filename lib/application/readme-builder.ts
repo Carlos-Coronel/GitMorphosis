@@ -183,8 +183,8 @@ function buildTrophiesUrl(
     return `${siteUrl}/api/trophies?${p.toString()}`;
   }
 
-  // Por defecto el oficial
-  return `https://github-profile-trophy.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
+  // Por defecto intentamos el espejo (mirror) funcional primero, ya que el oficial suele estar en 402 Payment Required
+  return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
 }
 
 // Interfaz de Estrategia de Plantilla (Patrón Strategy)
