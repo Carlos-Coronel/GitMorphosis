@@ -103,17 +103,30 @@ export class GitHubScraper implements IGitHubScraper {
     const name = nameMatch ? nameMatch[1].trim() : null;
     
     // Extract bio
-    const bioMatch = html.match(/<div[^>]*class="[^"]*user-profile-bio[^"]*"[^>]*>[\s\S]*?<div[^>]*>([^<]+)<\/div>/i) ||
-                     html.match(/<div[^>]*data-bio-text[^>]*>([^<]+)<\/div>/i);
-    const bio = bioMatch ? bioMatch[1].trim() : null;
+    let bio: string | null = null;
+    const dataBioMatch = html.match(/data-bio-text="([^"]*)"/i);
+    if (dataBioMatch) {
+      bio = dataBioMatch[1].trim() || null;
+    } else {
+      const bioBlockMatch = html.match(/<div[^>]*class="[^"]*user-profile-bio[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+      if (bioBlockMatch) {
+        bio = bioBlockMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || null;
+      }
+    }
     
     // Extract location
-    const locationMatch = html.match(/<li[^>]*itemprop="homeLocation"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/i);
-    const location = locationMatch ? locationMatch[1].trim() : null;
+    let location: string | null = null;
+    const locationBlockMatch = html.match(/<li[^>]*itemprop="homeLocation"[^>]*>([\s\S]*?)<\/li>/i);
+    if (locationBlockMatch) {
+      location = locationBlockMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || null;
+    }
     
     // Extract company
-    const companyMatch = html.match(/<li[^>]*itemprop="worksFor"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/i);
-    const company = companyMatch ? companyMatch[1].trim() : null;
+    let company: string | null = null;
+    const companyBlockMatch = html.match(/<li[^>]*itemprop="worksFor"[^>]*>([\s\S]*?)<\/li>/i);
+    if (companyBlockMatch) {
+      company = companyBlockMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || null;
+    }
     
     // Extract social links
     const socialLinks: { platform: string; url: string; username: string }[] = [];
@@ -183,8 +196,10 @@ export class GitHubScraper implements IGitHubScraper {
     const following = followingMatch ? extractNumber(followingMatch[1]) : 0;
     
     // Extract public repos count
-    const reposMatch = html.match(/<span[^>]*class="[^"]*Counter[^"]*"[^>]*title="(\d+)"[^>]*>/i) ||
-                       html.match(/Repositories[\s\S]*?<span[^>]*>(\d+)<\/span>/i);
+    const reposMatch = html.match(/Repositories\s*<span[^>]*title="(\d+)"/i) ||
+                       html.match(/Repositories\s*<span[^>]*class="[^"]*Counter[^"]*"[^>]*>(\d+)<\/span>/i) ||
+                       html.match(/href="[^"]*tab=repositories"[^>]*>[\s\S]*?<span[^>]*class="[^"]*Counter[^"]*"[^>]*>(\d+)<\/span>/i) ||
+                       html.match(/<span[^>]*class="[^"]*Counter[^"]*"[^>]*title="(\d+)"[^>]*>/i);
     const publicRepos = reposMatch ? parseInt(reposMatch[1], 10) : 0;
     
     return {
@@ -231,12 +246,12 @@ export class GitHubScraper implements IGitHubScraper {
       const language = langMatch ? langMatch[1].trim() : null;
       
       // Extract stars
-      const starsMatch = repoHtml.match(/stargazers[^>]*>[\s\S]*?(\d+(?:,\d+)*)/i);
-      const stars = starsMatch ? extractNumber(starsMatch[1]) : 0;
+      const starsAnchorMatch = repoHtml.match(/<a[^>]*href="[^"]*\/stargazers"[^>]*>([\s\S]*?)<\/a>/i);
+      const stars = starsAnchorMatch ? extractNumber(starsAnchorMatch[1].replace(/<[^>]*>/g, '')) : 0;
       
       // Extract forks
-      const forksMatch = repoHtml.match(/forks[^>]*>[\s\S]*?(\d+(?:,\d+)*)/i);
-      const forks = forksMatch ? extractNumber(forksMatch[1]) : 0;
+      const forksAnchorMatch = repoHtml.match(/<a[^>]*href="[^"]*\/forks"[^>]*>([\s\S]*?)<\/a>/i);
+      const forks = forksAnchorMatch ? extractNumber(forksAnchorMatch[1].replace(/<[^>]*>/g, '')) : 0;
       
       // Check if forked
       const isForked = repoHtml.includes('Forked from');
@@ -322,13 +337,12 @@ export class GitHubScraper implements IGitHubScraper {
       const language = langMatch ? langMatch[1].trim() : null;
       
       // Extract stars
-      const starsMatch = pinnedHtml.match(/stargazers[^>]*>[\s\S]*?(\d+)/i) ||
-                        pinnedHtml.match(/(\d+)\s*<\/svg>\s*$/i);
-      const stars = starsMatch ? parseInt(starsMatch[1], 10) : 0;
+      const starsAnchorMatch = pinnedHtml.match(/<a[^>]*href="[^"]*\/stargazers"[^>]*>([\s\S]*?)<\/a>/i);
+      const stars = starsAnchorMatch ? extractNumber(starsAnchorMatch[1].replace(/<[^>]*>/g, '')) : 0;
       
       // Extract forks
-      const forksMatch = pinnedHtml.match(/forks[^>]*>[\s\S]*?(\d+)/i);
-      const forks = forksMatch ? parseInt(forksMatch[1], 10) : 0;
+      const forksAnchorMatch = pinnedHtml.match(/<a[^>]*href="[^"]*\/forks"[^>]*>([\s\S]*?)<\/a>/i);
+      const forks = forksAnchorMatch ? extractNumber(forksAnchorMatch[1].replace(/<[^>]*>/g, '')) : 0;
       
       pinnedRepos.push({
         name,

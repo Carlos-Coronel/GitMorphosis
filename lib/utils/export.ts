@@ -53,6 +53,7 @@ export function generateStatsUrl(
     showIcons?: boolean;
     hideBorder?: boolean;
     countPrivate?: boolean;
+    baseUrl?: string;
   } = {}
 ): string {
   const {
@@ -60,6 +61,7 @@ export function generateStatsUrl(
     showIcons = true,
     hideBorder = true,
     countPrivate = false,
+    baseUrl = 'https://github-readme-stats.vercel.app',
   } = options;
   
   const params = new URLSearchParams({
@@ -70,7 +72,8 @@ export function generateStatsUrl(
     count_private: String(countPrivate),
   });
   
-  return `https://github-readme-stats.vercel.app/api?${params.toString()}`;
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  return `${cleanBase}/api?${params.toString()}`;
 }
 
 /**
@@ -83,6 +86,7 @@ export function generateTopLangsUrl(
     layout?: 'compact' | 'normal';
     hideBorder?: boolean;
     langsCount?: number;
+    baseUrl?: string;
   } = {}
 ): string {
   const {
@@ -90,6 +94,7 @@ export function generateTopLangsUrl(
     layout = 'compact',
     hideBorder = true,
     langsCount = 8,
+    baseUrl = 'https://github-readme-stats.vercel.app',
   } = options;
   
   const params = new URLSearchParams({
@@ -100,7 +105,8 @@ export function generateTopLangsUrl(
     langs_count: String(langsCount),
   });
   
-  return `https://github-readme-stats.vercel.app/api/top-langs/?${params.toString()}`;
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  return `${cleanBase}/api/top-langs/?${params.toString()}`;
 }
 
 /**
@@ -111,9 +117,14 @@ export function generateStreakUrl(
   options: {
     theme?: string;
     hideBorder?: boolean;
+    baseUrl?: string;
   } = {}
 ): string {
-  const { theme = 'dark', hideBorder = true } = options;
+  const {
+    theme = 'dark',
+    hideBorder = true,
+    baseUrl = 'https://streak-stats.demolab.com',
+  } = options;
   
   const params = new URLSearchParams({
     user: username,
@@ -121,7 +132,8 @@ export function generateStreakUrl(
     hide_border: String(hideBorder),
   });
   
-  return `https://github-readme-streak-stats.herokuapp.com/?${params.toString()}`;
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  return `${cleanBase}/?${params.toString()}`;
 }
 
 /**
@@ -134,9 +146,15 @@ export function generateRepoCardUrl(
     theme?: string;
     hideBorder?: boolean;
     showOwner?: boolean;
+    baseUrl?: string;
   } = {}
 ): string {
-  const { theme = 'dark', hideBorder = true, showOwner = false } = options;
+  const {
+    theme = 'dark',
+    hideBorder = true,
+    showOwner = false,
+    baseUrl = 'https://github-readme-stats.vercel.app',
+  } = options;
   
   const params = new URLSearchParams({
     username,
@@ -146,7 +164,8 @@ export function generateRepoCardUrl(
     show_owner: String(showOwner),
   });
   
-  return `https://github-readme-stats.vercel.app/api/pin/?${params.toString()}`;
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  return `${cleanBase}/api/pin/?${params.toString()}`;
 }
 
 /**

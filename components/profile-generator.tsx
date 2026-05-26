@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface Template {
@@ -88,6 +89,10 @@ export function ProfileGenerator() {
   const currentUsernameRef = useRef<string | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const socialLinksRef = useRef<SocialLink[]>([]);
+  const [statsUrl, setStatsUrl] = useState('');
+  const [streakUrl, setStreakUrl] = useState('https://streak-stats.demolab.com');
+  const statsUrlRef = useRef('');
+  const streakUrlRef = useRef('https://streak-stats.demolab.com');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Usar refs para valores que necesitamos en callbacks
@@ -114,7 +119,10 @@ export function ProfileGenerator() {
         body: JSON.stringify({ 
           username, 
           templateId: selectedTemplateRef.current,
-          socialLinks: linksToUse.filter(l => l.enabled && l.username)
+          socialLinks: linksToUse.filter(l => l.enabled && l.username),
+          statsUrl: statsUrlRef.current || undefined,
+          streakUrl: streakUrlRef.current,
+          siteUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
         }),
       });
 
@@ -161,6 +169,36 @@ export function ProfileGenerator() {
       debounceTimerRef.current = setTimeout(() => {
         handleGenerate(currentUsernameRef.current!, links);
       }, 800);
+    }
+  }, [handleGenerate]);
+
+  const handleStatsUrlChange = useCallback((value: string) => {
+    setStatsUrl(value);
+    statsUrlRef.current = value;
+    
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    if (currentUsernameRef.current) {
+      debounceTimerRef.current = setTimeout(() => {
+        handleGenerate(currentUsernameRef.current!);
+      }, 1000);
+    }
+  }, [handleGenerate]);
+
+  const handleStreakUrlChange = useCallback((value: string) => {
+    setStreakUrl(value);
+    streakUrlRef.current = value;
+    
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    if (currentUsernameRef.current) {
+      debounceTimerRef.current = setTimeout(() => {
+        handleGenerate(currentUsernameRef.current!);
+      }, 1000);
     }
   }, [handleGenerate]);
 
@@ -276,7 +314,7 @@ export function ProfileGenerator() {
             </button>
             
             {showAdvancedOptions && (
-              <div className="p-4 pt-0 border-t border-border/50 animate-in slide-in-from-top-2 duration-200">
+              <div className="p-5 border-t border-border/50 animate-in slide-in-from-top-2 duration-200 space-y-6">
                 <SocialLinksEditor
                   key={result?.profile.user.username || 'new'}
                   detectedTwitter={result?.profile.user.twitterUsername}
@@ -284,6 +322,48 @@ export function ProfileGenerator() {
                   detectedSocialLinks={result?.profile.user.socialLinks}
                   onChange={handleSocialLinksChange}
                 />
+                
+                <div className="border-t border-border/40 pt-5 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-1">
+                      <Settings2 className="h-4 w-4 text-primary" />
+                      Configuración de Servidores de Estadísticas
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-normal">
+                      Si las instancias públicas de <code className="text-primary font-mono bg-primary/5 px-1 py-0.5 rounded">github-readme-stats</code> están congestionadas o caídas (error 503), puedes especificar tus propias instancias autohospedadas aquí.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label htmlFor="stats-url-input" className="text-xs font-medium text-muted-foreground">
+                        Servidor de Estadísticas de GitHub (Stats & Top Languages)
+                      </label>
+                      <Input
+                        id="stats-url-input"
+                        type="url"
+                        placeholder="https://github-readme-stats.vercel.app"
+                        value={statsUrl}
+                        onChange={(e) => handleStatsUrlChange(e.target.value)}
+                        className="h-10 bg-card/50 border-border/70 focus:ring-primary/50 text-xs font-mono"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label htmlFor="streak-url-input" className="text-xs font-medium text-muted-foreground">
+                        Servidor de Streak de GitHub (Streak Stats)
+                      </label>
+                      <Input
+                        id="streak-url-input"
+                        type="url"
+                        placeholder="https://streak-stats.demolab.com"
+                        value={streakUrl}
+                        onChange={(e) => handleStreakUrlChange(e.target.value)}
+                        className="h-10 bg-card/50 border-border/70 focus:ring-primary/50 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

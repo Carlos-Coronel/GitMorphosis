@@ -275,6 +275,81 @@
   @apply my-8 border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent;
 }
 
+/* ── Light Preview Theme overrides ──────────────────────────────────────────
+   Applied when the preview toggles to "Claro" mode (bg-[#ffffff] / text-[#24292f]).
+   We scope all overrides under a data attribute so they don't bleed to the app. */
+.markdown-preview[data-preview-theme="light"] {
+  color: #24292f;
+  background: #ffffff;
+}
+.markdown-preview[data-preview-theme="light"] h1,
+.markdown-preview[data-preview-theme="light"] h2,
+.markdown-preview[data-preview-theme="light"] h3 {
+  color: #24292f;
+  border-color: #d0d7de;
+}
+.markdown-preview[data-preview-theme="light"] h2::before {
+  background: #0969da;
+}
+.markdown-preview[data-preview-theme="light"] p,
+.markdown-preview[data-preview-theme="light"] ul,
+.markdown-preview[data-preview-theme="light"] ol,
+.markdown-preview[data-preview-theme="light"] li {
+  color: #57606a;
+}
+.markdown-preview[data-preview-theme="light"] code {
+  background: #f6f8fa;
+  color: #0969da;
+  border-color: #d0d7de;
+}
+.markdown-preview[data-preview-theme="light"] pre {
+  background: #f6f8fa;
+  border-color: #d0d7de;
+}
+.markdown-preview[data-preview-theme="light"] pre::before {
+  background: linear-gradient(90deg, #0969da, #54aeff, #6fdd8b);
+}
+.markdown-preview[data-preview-theme="light"] pre code {
+  color: #24292f;
+}
+.markdown-preview[data-preview-theme="light"] a {
+  color: #0969da;
+  text-decoration-color: #0969da80;
+}
+.markdown-preview[data-preview-theme="light"] blockquote {
+  border-color: #d0d7de;
+  color: #57606a;
+  background: #f6f8fa;
+}
+.markdown-preview[data-preview-theme="light"] table {
+  border-color: #d0d7de;
+}
+.markdown-preview[data-preview-theme="light"] th,
+.markdown-preview[data-preview-theme="light"] td {
+  border-color: #d0d7de;
+  color: #24292f;
+}
+.markdown-preview[data-preview-theme="light"] th {
+  background: #f6f8fa;
+  color: #24292f;
+}
+.markdown-preview[data-preview-theme="light"] tr:nth-child(even) td {
+  background: #f6f8fa80;
+}
+.markdown-preview[data-preview-theme="light"] hr {
+  background: linear-gradient(90deg, transparent, #d0d7de, transparent);
+}
+.markdown-preview[data-preview-theme="light"] img {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
+  border: 1px solid #d0d7de;
+}
+.markdown-preview[data-preview-theme="light"] ul li::before {
+  color: #0969da;
+}
+.markdown-preview[data-preview-theme="light"] img:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 /* ===== FONDO ANIMADO ===== */
 .animated-gradient {
   background: 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useTheme } from 'next-themes';
 import { 
   Copy, 
   Download, 
@@ -11,7 +12,9 @@ import {
   Minimize2,
   X,
   Share2,
-  Printer
+  Printer,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +30,8 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // previewTheme drives which variant of the adaptive images to show
+  const [previewTheme, setPreviewTheme] = useState<'dark' | 'light'>('dark');
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -94,59 +99,88 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
           </style>
         </head>
         <body>
-          ${renderMarkdown(markdown)}
+          ${renderMarkdown(markdown, previewTheme)}
         </body>
         </html>
       `);
       printWindow.document.close();
       printWindow.print();
     }
-  }, [markdown, username]);
+  }, [markdown, username, previewTheme]);
 
-  // Convertidor simple de Markdown a HTML para preview
-  const renderMarkdown = (md: string): string => {
-    let html = md
+  // ── Core Markdown → HTML converter ──────────────────────────────────────────
+  // Accepts a `theme` arg so it can be called both reactively (for the live
+  // preview) and on print (where the theme is fixed at call-time).
+  const renderMarkdown = (md: string, theme: 'dark' | 'light'): string => {
+    const isDark = theme === 'dark';
+
+    // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
+    // The readme-builder emits:
+    //   <picture>
+    //     <source media="(prefers-color-scheme: dark)"  srcset="<darkUrl>">
+    //     <source media="(prefers-color-scheme: light)" srcset="<lightUrl>">
+    //     <img src="<lightUrl>" alt="..." [height="..."] />
+    //   </picture>
+    // We pick darkUrl or lightUrl based on the current preview theme.
+    let processed = md.replace(
+      /<picture>\s*<source[^>]*media="[^"]*dark[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<source[^>]*media="[^"]*light[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<img[^>]*alt="([^"]*)"[^>]*(?:height="([^"]*)")?[^>]*\/>\s*<\/picture>/gi,
+      (_match, darkSrc, lightSrc, alt, height) => {
+        const src = isDark ? darkSrc : lightSrc;
+        const isStatsCard = src.includes('/api/stats') || src.includes('/api/top-langs')
+          || src.includes('/api/pin') || src.includes('/api/snake')
+          || src.includes('streak-stats') || src.includes('github-readme-stats')
+          || src.includes('github-profile-trophy') || src.includes('capsule-render')
+          || src.includes('readme-typing-svg');
+        const heightAttr = height ? ` height="${height}"` : '';
+        const classAttr = isStatsCard ? ' class="stats-card"' : '';
+        return `<img src="${src}" alt="${alt || ''}"${heightAttr}${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
+      }
+    );
+
+    // ── 2. Remaining Markdown ────────────────────────────────────────────────
+    let html = processed
+      // Fenced code blocks (must come before inline code)
+      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
       // Headers
       .replace(/^### (.*$)/gm, '<h3>$1</h3>')
       .replace(/^## (.*$)/gm, '<h2>$1</h2>')
       .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-      // Bold
+      // Bold & italic
+      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Italic
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Code blocks
-      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
       // Inline code
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      // Images - manejar imágenes de GitHub stats con fallback
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
-        const isStatsCard = src.includes('github-readme-stats.vercel.app');
-        return `<img src="${src}" alt="${alt}" loading="lazy" class="${isStatsCard ? 'stats-card' : ''}" onerror="this.classList.add('broken-image'); this.alt='Error al cargar stats'; console.warn('Falla al cargar imagen: ${src}');" />`;
+      // Stand-alone plain ![]() images (not already inside a <picture>)
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
+        const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats')
+          || src.includes('streak-stats') || src.includes('capsule-render')
+          || src.includes('shields.io') || src.includes('komarev');
+        const classAttr = isStatsCard ? ' class="stats-card"' : '';
+        return `<img src="${src}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
       })
-      // Links
+      // [![badge](img)](url) — badge links
+      .replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g,
+        '<a href="$3" target="_blank" rel="noopener noreferrer"><img src="$2" alt="$1" loading="lazy" /></a>')
+      // Regular links
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
       // Blockquotes
       .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
       // Horizontal rules
       .replace(/^---$/gm, '<hr />')
-      // List items
-      .replace(/^\* (.*$)/gm, '<li>$1</li>')
-      .replace(/^- (.*$)/gm, '<li>$1</li>')
-      // Tablas
+      // Unordered list items
+      .replace(/^[*-] (.*$)/gm, '<li>$1</li>')
+      // Tables
       .replace(/\|(.+)\|/g, (match) => {
         const cells = match.split('|').filter(c => c.trim());
-        if (cells.every(c => /^[-:\s]+$/.test(c))) {
-          return ''; // Línea separadora de tabla
-        }
-        const isHeader = cells.some(c => c.includes('---'));
-        const tag = isHeader ? 'th' : 'td';
+        if (cells.every(c => /^[-:\s]+$/.test(c))) return '';
+        const tag = 'td';
         return `<tr>${cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('')}</tr>`;
       })
-      // Paragraphs and line breaks
+      // Paragraphs & line breaks
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br />');
 
-    // Wrap en paragraph si no comienza con elemento de bloque
     if (!html.startsWith('<')) {
       html = `<p>${html}</p>`;
     }
@@ -154,10 +188,20 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
     return html;
   };
 
-  // Contenido principal del preview
+  // Memoize the rendered HTML so it only recomputes when markdown or theme changes
+  const renderedHtml = useMemo(
+    () => renderMarkdown(markdown, previewTheme),
+    [markdown, previewTheme]
+  );
+
+  // ── Preview background & text color per theme ────────────────────────────
+  const previewBg  = previewTheme === 'dark'  ? 'bg-[#0d1117]' : 'bg-[#ffffff]';
+  const previewText = previewTheme === 'dark' ? 'text-[#c9d1d9]' : 'text-[#24292f]';
+
+  // ── Content ──────────────────────────────────────────────────────────────
   const PreviewContent = () => (
     <>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
           <TabsList className="bg-muted/50">
             <TabsTrigger value="preview" className="data-[state=active]:bg-card gap-2">
@@ -172,6 +216,36 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
         </Tabs>
         
         <div className="flex gap-2 flex-wrap items-center">
+          {/* ── Dark / Light preview toggle ── */}
+          <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 p-0.5">
+            <button
+              onClick={() => setPreviewTheme('dark')}
+              title="Vista previa en modo oscuro"
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                previewTheme === 'dark'
+                  ? 'bg-[#0d1117] text-[#c9d1d9] shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Moon className="h-3.5 w-3.5" />
+              Oscuro
+            </button>
+            <button
+              onClick={() => setPreviewTheme('light')}
+              title="Vista previa en modo claro"
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                previewTheme === 'light'
+                  ? 'bg-white text-[#24292f] shadow-sm ring-1 ring-border/40'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Sun className="h-3.5 w-3.5" />
+              Claro
+            </button>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -243,7 +317,7 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
       </div>
 
       <div className={cn(
-        "relative rounded-lg border border-border/50 bg-card overflow-hidden shadow-lg shadow-primary/10",
+        "relative rounded-lg border border-border/50 overflow-hidden shadow-lg shadow-primary/10",
         isFullscreen && "border-0 rounded-none shadow-none",
         isLoading && "opacity-60 transition-opacity duration-300"
       )}>
@@ -264,19 +338,31 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
             )}
           </span>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="px-2 py-0.5 rounded bg-muted/80 border border-border/30">{markdown.length} caracteres</span>
-            <span className="px-2 py-0.5 rounded bg-muted/80 border border-border/30">{markdown.split('\n').length} líneas</span>
+            {/* Theme badge */}
+            <span className={cn(
+              'px-2 py-0.5 rounded border text-[10px] font-medium',
+              previewTheme === 'dark'
+                ? 'bg-slate-800 border-slate-700 text-slate-300'
+                : 'bg-white border-slate-200 text-slate-600'
+            )}>
+              {previewTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+            </span>
+            <span className="px-2 py-0.5 rounded bg-muted/80 border border-border/30">{markdown.length} chars</span>
+            <span className="px-2 py-0.5 rounded bg-muted/80 border border-border/30 hidden sm:block">{markdown.split('\n').length} líneas</span>
           </div>
         </div>
 
         <Tabs value={activeTab} className="w-full">
           <TabsContent value="preview" className="mt-0">
-            <div 
+            {/* The preview area itself uses the previewTheme colours */}
+            <div
               className={cn(
-                "p-6 overflow-auto custom-scrollbar markdown-preview",
-                isFullscreen ? "max-h-[calc(100vh-180px)]" : "max-h-[600px]"
+                'p-6 overflow-auto custom-scrollbar markdown-preview transition-colors duration-300',
+                previewTheme === 'dark' ? 'bg-[#0d1117] text-[#c9d1d9]' : 'bg-[#ffffff] text-[#24292f]',
+                isFullscreen ? 'max-h-[calc(100vh-180px)]' : 'max-h-[600px]'
               )}
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }}
+              data-preview-theme={previewTheme}
+              dangerouslySetInnerHTML={{ __html: renderedHtml }}
             />
           </TabsContent>
           

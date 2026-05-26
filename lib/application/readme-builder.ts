@@ -36,12 +36,99 @@ function getAdaptiveImage(darkUrl: string, lightUrl: string, alt: string, height
   return `<picture><source media="(prefers-color-scheme: dark)" srcset="${darkUrl}"><source media="(prefers-color-scheme: light)" srcset="${lightUrl}"><img src="${lightUrl}" alt="${alt}"${heightAttr} /></picture>`;
 }
 
+/**
+ * Builds a self-hosted /api/stats URL with profile data embedded in query params.
+ * Falls back to a custom statsUrl server if provided.
+ */
+function buildStatsUrl(
+  profile: { user: { username: string; followers: number; publicRepos: number }; repositories: { stars: number }[] },
+  theme: string,
+  statsUrl: string,
+  siteUrl: string
+): string {
+  // Total stars across all repos
+  const totalStars = profile.repositories.reduce((sum, r) => sum + (r.stars || 0), 0);
+  const base = statsUrl || `${siteUrl}/api/stats`;
+  const p = new URLSearchParams({
+    username: profile.user.username,
+    theme,
+    show_icons: 'true',
+    hide_border: 'true',
+    stars: String(totalStars),
+    followers: String(profile.user.followers),
+    repos: String(profile.user.publicRepos),
+  });
+  // If using a custom external server, use that server's own path
+  if (statsUrl) return `${statsUrl}/api?${p.toString()}`;
+  return `${base}?${p.toString()}`;
+}
+
+/**
+ * Builds a self-hosted /api/top-langs URL with language data embedded.
+ */
+function buildTopLangsUrl(
+  langs: { language: string; percentage: number; color: string }[],
+  username: string,
+  theme: string,
+  layout: string,
+  statsUrl: string,
+  siteUrl: string
+): string {
+  if (statsUrl) {
+    const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
+    return `${statsUrl}/api/top-langs/?${p.toString()}`;
+  }
+  const langsJson = JSON.stringify(
+    langs.slice(0, 8).map(l => ({ language: l.language, percentage: l.percentage, color: l.color }))
+  );
+  const p = new URLSearchParams({ username, theme, layout, hide_border: 'true', langs: langsJson });
+  return `${siteUrl}/api/top-langs?${p.toString()}`;
+}
+
+/**
+ * Builds a self-hosted /api/pin URL with repo data embedded.
+ */
+function buildPinUrl(
+  repo: { name: string; description: string | null; language: string | null; stars: number; forks: number; url: string },
+  username: string,
+  theme: string,
+  showOwner: boolean,
+  statsUrl: string,
+  siteUrl: string
+): string {
+  if (statsUrl) {
+    const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
+    return `${statsUrl}/api/pin/?${p.toString()}`;
+  }
+  const p = new URLSearchParams({
+    username,
+    repo: repo.name,
+    description: repo.description || '',
+    language: repo.language || '',
+    stars: String(repo.stars),
+    forks: String(repo.forks),
+    theme,
+    hide_border: 'true',
+    show_owner: String(showOwner),
+  });
+  return `${siteUrl}/api/pin?${p.toString()}`;
+}
+
+export interface ReadmeOptions {
+  /** Override base URL for github-readme-stats-compatible server (e.g. self-hosted). Leave blank to use the built-in /api/stats routes. */
+  statsUrl?: string;
+  /** Override base URL for streak-stats server. Defaults to streak-stats.demolab.com */
+  streakUrl?: string;
+  /** The origin used to build absolute self-hosted SVG URLs (e.g. https://yourdomain.com). Required when generating README for deployment. */
+  siteUrl?: string;
+}
+
 // Interfaz de Estrategia de Plantilla (Patrón Strategy)
 export interface IReadmeStrategy {
   id: string;
   name: string;
   description: string;
-  generate(profile: GitHubProfile): string;
+  generate(profile: GitHubProfile, options?: ReadmeOptions): string;
 }
 
 // Plantilla Minimalista Moderna
@@ -50,9 +137,12 @@ export class MinimalistStrategy implements IReadmeStrategy {
   name = 'Minimalista';
   description = 'Perfil limpio y simple con información esencial';
   
-  generate(profile: GitHubProfile): string {
+  generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user, repositories, topLanguages } = profile;
     const topRepos = repositories.filter(r => !r.isForked).slice(0, 6);
+    
+    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -73,8 +163,8 @@ export class MinimalistStrategy implements IReadmeStrategy {
     // Stats
     readme += `## GitHub Stats\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=dark&hide_border=true`,
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=default&hide_border=true`,
+      buildStatsUrl(profile, 'dark', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'default', statsUrl, siteUrl),
       `${user.username}'s GitHub stats`
     ) + `\n\n`;
     
@@ -82,8 +172,8 @@ export class MinimalistStrategy implements IReadmeStrategy {
     if (topLanguages.length > 0) {
       readme += `## Top Languages\n\n`;
       readme += getAdaptiveImage(
-        `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=dark&hide_border=true`,
-        `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=default&hide_border=true`,
+        buildTopLangsUrl(topLanguages, user.username, 'dark', 'compact', statsUrl, siteUrl),
+        buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl),
         `Top Langs`
       ) + `\n\n`;
     }
@@ -128,9 +218,13 @@ export class PortfolioStrategy implements IReadmeStrategy {
   name = 'Portafolio Desarrollador';
   description = 'Portafolio profesional con exhibición de habilidades y destacados de proyectos';
   
-  generate(profile: GitHubProfile): string {
+  generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user, repositories, topLanguages, pinnedRepos } = profile;
     const featuredRepos = pinnedRepos.length > 0 ? pinnedRepos : repositories.filter(r => !r.isForked).slice(0, 6);
+    
+    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+    const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
+    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -168,14 +262,14 @@ export class PortfolioStrategy implements IReadmeStrategy {
     readme += `## 📊 GitHub Analytics\n\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=tokyonight&hide_border=true&count_private=true`,
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=flat&hide_border=true&count_private=true`,
+      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'flat', statsUrl, siteUrl),
       `${user.username}'s GitHub stats`,
       '180em'
     ) + '\n';
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=tokyonight&hide_border=true`,
-      `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=flat&hide_border=true`,
+      buildTopLangsUrl(topLanguages, user.username, 'tokyonight', 'compact', statsUrl, siteUrl),
+      buildTopLangsUrl(topLanguages, user.username, 'flat', 'compact', statsUrl, siteUrl),
       'Top Langs',
       '180em'
     ) + '\n\n';
@@ -184,8 +278,8 @@ export class PortfolioStrategy implements IReadmeStrategy {
     // Streak Stats
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-streak-stats.herokuapp.com/?user=${user.username}&theme=tokyonight&hide_border=true`,
-      `https://github-readme-streak-stats.herokuapp.com/?user=${user.username}&theme=flat&hide_border=true`,
+      `${streakUrl}/?user=${user.username}&theme=tokyonight&hide_border=true`,
+      `${streakUrl}/?user=${user.username}&theme=flat&hide_border=true`,
       'GitHub Streak'
     ) + '\n\n';
     readme += `</div>\n\n`;
@@ -196,8 +290,8 @@ export class PortfolioStrategy implements IReadmeStrategy {
       readme += `<div align="center">\n\n`;
       
       for (const repo of featuredRepos.slice(0, 4)) {
-        const darkCard = `https://github-readme-stats.vercel.app/api/pin/?username=${user.username}&repo=${repo.name}&theme=tokyonight&hide_border=true`;
-        const lightCard = `https://github-readme-stats.vercel.app/api/pin/?username=${user.username}&repo=${repo.name}&theme=flat&hide_border=true`;
+        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', false, statsUrl, siteUrl);
+        const lightCard = buildPinUrl(repo, user.username, 'flat', false, statsUrl, siteUrl);
         readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
       }
       
@@ -249,9 +343,13 @@ export class CreativeStrategy implements IReadmeStrategy {
   name = 'Creativa';
   description = 'Diseño único y llamativo con animaciones y elementos creativos';
   
-  generate(profile: GitHubProfile): string {
+  generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user, repositories, topLanguages } = profile;
     const topRepos = repositories.filter(r => !r.isForked).slice(0, 4);
+    
+    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+    const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
+    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -335,14 +433,14 @@ export class CreativeStrategy implements IReadmeStrategy {
     readme += `<table>\n<tr>\n`;
     readme += `<td>\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=tokyonight&hide_border=true&count_private=true`,
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=flat&hide_border=true&count_private=true`,
+      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'flat', statsUrl, siteUrl),
       'Stats'
     ) + '\n\n';
     readme += `</td>\n<td>\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-streak-stats.herokuapp.com/?user=${user.username}&theme=tokyonight&hide_border=true`,
-      `https://github-readme-streak-stats.herokuapp.com/?user=${user.username}&theme=flat&hide_border=true`,
+      `${streakUrl}/?user=${user.username}&theme=tokyonight&hide_border=true`,
+      `${streakUrl}/?user=${user.username}&theme=flat&hide_border=true`,
       'Streak'
     ) + '\n\n';
     readme += `</td>\n</tr>\n</table>\n`;
@@ -355,24 +453,24 @@ export class CreativeStrategy implements IReadmeStrategy {
       
       for (const repo of topRepos) {
         // En tarjetas de proyectos mantenemos el link pero usamos img adaptativa
-        const darkCard = `https://github-readme-stats.vercel.app/api/pin/?username=${user.username}&repo=${repo.name}&theme=tokyonight&hide_border=true&show_owner=true`;
-        const lightCard = `https://github-readme-stats.vercel.app/api/pin/?username=${user.username}&repo=${repo.name}&theme=flat&hide_border=true&show_owner=true`;
+        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', true, statsUrl, siteUrl);
+        const lightCard = buildPinUrl(repo, user.username, 'flat', true, statsUrl, siteUrl);
         readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
       }
       
       readme += '\n</div>\n\n';
     }
     
-    // Activity Snake
+    // Activity Snake — served by self-hosted /api/snake, no GitHub Actions required
     readme += `## 🐍 Contribution Snake\n\n`;
-    readme += `<!-- Para que la animación funcione, debes configurar el action "github-contribution-grid-snake" en tu repo de perfil -->\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake.svg`,
-      `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake.svg`,
+      `${siteUrl}/api/snake?username=${user.username}&theme=tokyonight&hide_border=true`,
+      `${siteUrl}/api/snake?username=${user.username}&theme=flat&hide_border=true`,
       'Snake animation'
     ) + '\n\n';
     readme += `</div>\n\n`;
+
     
     // Connect
     readme += `## 🌐 Connect with Me\n\n`;
@@ -412,9 +510,12 @@ export class TerminalStrategy implements IReadmeStrategy {
   name = 'Terminal';
   description = 'Estética de terminal estilo hacker con fuentes monoespaciadas';
   
-  generate(profile: GitHubProfile): string {
+  generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user, repositories, topLanguages } = profile;
     const topRepos = repositories.filter(r => !r.isForked).slice(0, 5);
+    
+    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -457,13 +558,13 @@ export class TerminalStrategy implements IReadmeStrategy {
     readme += `## 📊 System Metrics\n\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=chartreuse-dark&hide_border=true&bg_color=0D1117`,
-      `https://github-readme-stats.vercel.app/api?username=${user.username}&show_icons=true&theme=default&hide_border=true`,
+      buildStatsUrl(profile, 'chartreuse-dark', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'default', statsUrl, siteUrl),
       'Stats'
     ) + '\n\n';
     readme += getAdaptiveImage(
-      `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=chartreuse-dark&hide_border=true&bg_color=0D1117`,
-      `https://github-readme-stats.vercel.app/api/top-langs/?username=${user.username}&layout=compact&theme=default&hide_border=true`,
+      buildTopLangsUrl(topLanguages, user.username, 'chartreuse-dark', 'compact', statsUrl, siteUrl),
+      buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl),
       'Top Langs'
     ) + '\n\n';
     readme += `</div>\n\n`;
@@ -528,14 +629,14 @@ export class ReadmeBuilder {
     }));
   }
   
-  build(profile: GitHubProfile, templateId: string = 'portfolio'): GeneratedReadme {
+  build(profile: GitHubProfile, templateId: string = 'portfolio', options?: ReadmeOptions): GeneratedReadme {
     const strategy = this.strategies.get(templateId);
     if (!strategy) {
       throw new Error(`Plantilla no encontrada: ${templateId}`);
     }
     
     return {
-      markdown: strategy.generate(profile),
+      markdown: strategy.generate(profile, options),
       templateId,
       generatedAt: new Date(),
       profile,

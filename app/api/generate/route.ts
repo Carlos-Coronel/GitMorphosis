@@ -9,7 +9,7 @@ export const maxDuration = 60; // Allow up to 60 seconds for scraping
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, templateId = 'portfolio', socialLinks } = body;
+    const { username, templateId = 'portfolio', socialLinks, statsUrl, streakUrl, siteUrl: bodySiteUrl } = body;
     
     if (!username || typeof username !== 'string') {
       return NextResponse.json(
@@ -30,6 +30,20 @@ export async function POST(request: NextRequest) {
     if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(cleanUsername)) {
       return NextResponse.json(
         { error: 'Invalid GitHub username format', success: false },
+        { status: 400 }
+      );
+    }
+
+    // Validate custom endpoints if provided
+    if (statsUrl && typeof statsUrl === 'string' && !/^https?:\/\//i.test(statsUrl)) {
+      return NextResponse.json(
+        { error: 'Invalid stats URL format', success: false },
+        { status: 400 }
+      );
+    }
+    if (streakUrl && typeof streakUrl === 'string' && !/^https?:\/\//i.test(streakUrl)) {
+      return NextResponse.json(
+        { error: 'Invalid streak URL format', success: false },
         { status: 400 }
       );
     }
@@ -54,7 +68,19 @@ export async function POST(request: NextRequest) {
       profile.user.socialLinks = socialLinks;
     }
 
-    const result = readmeBuilder.build(profile, templateId);
+    // Use siteUrl from client if provided, otherwise derive from request headers
+    const origin = bodySiteUrl || (
+      request.headers.get('x-forwarded-proto')
+        ? `${request.headers.get('x-forwarded-proto')}://${request.headers.get('host')}`
+        : `http://${request.headers.get('host') || 'localhost:3000'}`
+    );
+
+    const result = readmeBuilder.build(profile, templateId, {
+      statsUrl: statsUrl || undefined,
+      streakUrl: streakUrl || undefined,
+      siteUrl: origin,
+    });
+
     
     return NextResponse.json({
       success: true,
