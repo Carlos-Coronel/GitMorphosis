@@ -20,12 +20,21 @@ import {
   Wand2,
   Rocket,
   Code2,
-  ExternalLink
+  ExternalLink,
+  Activity,
+  Server,
+  ShieldCheck,
+  ShieldAlert,
+  CheckCircle2
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getCachedServiceHealth, type ServiceStatus } from '@/lib/infrastructure/service-health';
 
 interface Template {
   id: string;
@@ -96,6 +105,8 @@ export function ProfileGenerator() {
   const socialLinksRef = useRef<SocialLink[]>([]);
   const [statsUrl, setStatsUrl] = useState('');
   const [streakUrl, setStreakUrl] = useState('https://streak-stats.demolab.com');
+  const [serviceHealth, setServiceHealth] = useState<ServiceStatus[]>([]);
+  const [forceSelfHosted, setForceSelfHosted] = useState(false);
   const statsUrlRef = useRef('');
   const streakUrlRef = useRef('https://streak-stats.demolab.com');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -146,10 +157,18 @@ export function ProfileGenerator() {
       setLoadingStep('Generando README...');
       const builder = createReadmeBuilder();
       const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      
+      const serviceStatus: Record<string, boolean> = {};
+      serviceHealth.forEach(s => {
+        serviceStatus[s.name] = s.isUp;
+      });
+
       const generatedResult = builder.build(profile, selectedTemplateRef.current, {
         statsUrl: statsUrlRef.current || undefined,
         streakUrl: streakUrlRef.current,
         siteUrl,
+        forceSelfHosted,
+        serviceStatus,
       });
 
       setResult({
@@ -229,12 +248,19 @@ export function ProfileGenerator() {
     }
   }, [handleGenerate]);
 
-  // Limpiar timer al desmontar
+  // Limpiar timer al desmontar y ejecutar health check
   useEffect(() => {
+    getCachedServiceHealth().then(setServiceHealth);
+    
+    const interval = setInterval(() => {
+      getCachedServiceHealth().then(setServiceHealth);
+    }, 120000);
+
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      clearInterval(interval);
     };
   }, []);
 
@@ -290,6 +316,33 @@ export function ProfileGenerator() {
 
         {/* Contenido Principal */}
         <div className="max-w-5xl mx-auto space-y-8">
+          {/* Alerta de Estado de Servicios */}
+          <div className="fade-in-up stagger-3 opacity-0 space-y-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-2">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Activity className="h-3 w-3" /> Salud de Servicios:
+              </span>
+              {serviceHealth.length === 0 ? (
+                <Badge variant="outline" className="text-[10px] animate-pulse">Verificando...</Badge>
+              ) : (
+                serviceHealth.map(s => (
+                  <Badge 
+                    key={s.name} 
+                    variant="outline" 
+                    className={cn(
+                      "text-[10px] gap-1 px-2 py-0",
+                      s.isUp ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/5" : "border-rose-500/30 text-rose-600 bg-rose-500/5"
+                    )}
+                  >
+                    {s.isUp ? <ShieldCheck className="h-2.5 w-2.5" /> : <ShieldAlert className="h-2.5 w-2.5" />}
+                    {s.name}
+                  </Badge>
+                ))
+              )}
+            </div>
+
+          </div>
+
           {/* Entrada de Usuario */}
           <div className="fade-in-up stagger-4 opacity-0">
             <UsernameInput onSubmit={handleGenerate} isLoading={isLoading} />
@@ -351,6 +404,26 @@ export function ProfileGenerator() {
                 />
                 
                 <div className="border-t border-border/40 pt-5 space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/10">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="force-self-hosted" className="text-sm font-semibold flex items-center gap-2">
+                        <Server className="h-4 w-4 text-primary" />
+                        Usar Endpoints Propios (Recomendado)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Ignora servicios externos inestables y usa la infraestructura de GitMorphosis para generar los SVGs.
+                      </p>
+                    </div>
+                    <Switch
+                      id="force-self-hosted"
+                      checked={forceSelfHosted}
+                      onCheckedChange={(val) => {
+                        setForceSelfHosted(val);
+                        if (currentUsernameRef.current) handleGenerate(currentUsernameRef.current);
+                      }}
+                    />
+                  </div>
+
                   <div>
                     <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-1">
                       <Settings2 className="h-4 w-4 text-primary" />
@@ -369,7 +442,7 @@ export function ProfileGenerator() {
                       <Input
                         id="stats-url-input"
                         type="url"
-                        placeholder="https://github-readme-stats.vercel.app"
+                        placeholder="https://github-readme-stats-sigma-five.vercel.app"
                         value={statsUrl}
                         onChange={(e) => handleStatsUrlChange(e.target.value)}
                         className="h-10 bg-card/50 border-border/70 focus:ring-primary/50 text-xs font-mono"

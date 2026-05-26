@@ -24,6 +24,7 @@ import { statsDataUri } from '@/lib/client/svg/stats-card';
 import { topLangsDataUri } from '@/lib/client/svg/top-langs-card';
 import { pinDataUri } from '@/lib/client/svg/pin-card';
 import { snakeDataUri } from '@/lib/client/svg/snake-card';
+import { trophyDataUri } from '@/lib/client/svg/trophy-card';
 
 interface ReadmePreviewProps {
   markdown: string;
@@ -152,6 +153,22 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
         localUriMap.set('top-langs', langsUri);
       }
 
+      // Trophies
+      const trophies = trophyDataUri({
+        username: profile.user.username,
+        theme: svgTheme,
+        stats: {
+          stars: totalStars,
+          commits: profile.user.publicRepos * 30,
+          prs: profile.user.publicRepos * 5,
+          issues: profile.user.publicRepos * 2,
+          followers: profile.user.followers,
+          repos: profile.user.publicRepos,
+        },
+        hideBorder: true,
+      });
+      localUriMap.set('trophies', trophies);
+
       // Snake
       const snake = snakeDataUri({
         username: profile.user.username,
@@ -179,10 +196,13 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
 
     // Helper: swap an external URL to a local data URI if we have one
     const resolveUrl = (url: string): string => {
-      if (url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?')) {
+      if (url.includes('github-profile-trophy.vercel.app') || url.includes('github-profile-trophy-one.vercel.app') || url.includes('/api/trophies')) {
+        return localUriMap.get('trophies') || url;
+      }
+      if (url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?') || url.includes('github-readme-stats-sigma-five.vercel.app/api?')) {
         return localUriMap.get('stats') || url;
       }
-      if (url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs')) {
+      if (url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs') || url.includes('github-readme-stats-sigma-five.vercel.app/api/top-langs')) {
         return localUriMap.get('top-langs') || url;
       }
       if (url.includes('/api/snake') || url.includes('github-contribution-grid-snake')) {
@@ -190,7 +210,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       }
       // Pin: match repo name from URL
       const pinMatch = url.match(/[?&]repo=([^&]+)/);
-      if (pinMatch && (url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin'))) {
+      if (pinMatch && (url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin') || url.includes('github-readme-stats-sigma-five.vercel.app/api/pin'))) {
         return localUriMap.get(`pin:${pinMatch[1]}`) || url;
       }
       return url;
@@ -203,7 +223,8 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
         const rawSrc = isDark ? darkSrc : lightSrc;
         const src = resolveUrl(rawSrc);
         const isCard = src.startsWith('data:') || rawSrc.includes('/api/')
-          || rawSrc.includes('github-readme-stats') || rawSrc.includes('streak-stats')
+          || rawSrc.includes('github-readme-stats') || rawSrc.includes('github-readme-stats-sigma-five')
+          || rawSrc.includes('github-profile-trophy') || rawSrc.includes('streak-stats')
           || rawSrc.includes('capsule-render') || rawSrc.includes('readme-typing-svg');
         const heightAttr = height ? ` height="${height}"` : '';
         const classAttr = isCard ? ' class="stats-card"' : '';
@@ -227,8 +248,8 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       // Stand-alone plain ![]() images (not already inside a <picture>)
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
-        const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats')
-          || src.includes('streak-stats') || src.includes('capsule-render')
+        const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats') || src.includes('github-readme-stats-sigma-five')
+          || src.includes('github-profile-trophy') || src.includes('streak-stats') || src.includes('capsule-render')
           || src.includes('shields.io') || src.includes('komarev');
         const classAttr = isStatsCard ? ' class="stats-card"' : '';
         return `<img src="${src}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;

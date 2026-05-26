@@ -34,7 +34,7 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
 
   const t = THEMES[theme] ?? THEMES.tokyonight;
   const langs = languages.slice(0, langCount);
-  const W = 300;
+  const W = 495; // Ancho estándar para tarjetas de GitHub
 
   if (layout === 'compact') {
     const H = 120;
@@ -42,13 +42,13 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
     const total = langs.reduce((s, l) => s + l.percentage, 0) || 1;
     let xOffset = 25;
     const barY = 70;
-    const barH = 8;
+    const barH = 10;
     const barW = W - 50;
 
     const bars = langs.map(l => {
       const w = Math.round((l.percentage / total) * barW);
       const color = l.color || LANGUAGE_COLORS[l.language] || '#8b949e';
-      const bar = `<rect x="${xOffset}" y="${barY}" width="${w}" height="${barH}" fill="${color}" rx="2"/>`;
+      const bar = `<rect x="${xOffset}" y="${barY}" width="${w}" height="${barH}" fill="${color}"/>`;
       xOffset += w;
       return bar;
     }).join('');
@@ -56,12 +56,12 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
     const labels = langs.slice(0, 6).map((l, i) => {
       const col = i % 3;
       const row = Math.floor(i / 3);
-      const x = 25 + col * 85;
-      const y = barY + barH + 14 + row * 18;
+      const x = 25 + col * 150; // Más espacio entre columnas
+      const y = barY + barH + 18 + row * 18;
       const color = l.color || LANGUAGE_COLORS[l.language] || '#8b949e';
       return `<circle cx="${x}" cy="${y - 4}" r="5" fill="${color}"/>
-  <text x="${x + 10}" y="${y}" fill="${t.text}" font-size="11" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
-  <text x="${x + 70}" y="${y}" fill="${t.title}" font-size="11" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
+  <text x="${x + 15}" y="${y}" fill="${t.text}" font-size="11" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
+  <text x="${x + 130}" y="${y}" fill="${t.title}" font-size="11" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
     }).join('');
 
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
@@ -79,7 +79,8 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
   // Normal layout: list with progress bars per language
   const itemH = 30;
   const H = 40 + langs.length * itemH + 20;
-  const barMaxW = W - 100 - 55;
+  const barStart = 150; // Empezar la barra más a la derecha para dar espacio al texto
+  const barMaxW = W - barStart - 55;
   const maxPct = Math.max(...langs.map(l => l.percentage), 1);
 
   const items = langs.map((l, i) => {
@@ -88,9 +89,9 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
     const barW = Math.round((l.percentage / maxPct) * barMaxW);
     return `
   <circle cx="30" cy="${y}" r="6" fill="${color}"/>
-  <text x="42" y="${y + 4}" fill="${t.text}" font-size="12" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
-  <rect x="100" y="${y - 6}" width="${barMaxW}" height="8" rx="4" fill="${t.border}" opacity="0.3"/>
-  <rect x="100" y="${y - 6}" width="${barW}" height="8" rx="4" fill="${color}"/>
+  <text x="45" y="${y + 4}" fill="${t.text}" font-size="12" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
+  <rect x="${barStart}" y="${y - 6}" width="${barMaxW}" height="8" rx="4" fill="${t.border}" opacity="0.3"/>
+  <rect x="${barStart}" y="${y - 6}" width="${barW}" height="8" rx="4" fill="${color}"/>
   <text x="${W - 25}" y="${y + 4}" fill="${t.title}" font-size="11" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
   }).join('');
 

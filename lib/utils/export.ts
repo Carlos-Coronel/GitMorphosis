@@ -61,7 +61,7 @@ export function generateStatsUrl(
     showIcons = true,
     hideBorder = true,
     countPrivate = false,
-    baseUrl = 'https://github-readme-stats.vercel.app',
+    baseUrl = 'https://github-readme-stats-sigma-five.vercel.app',
   } = options;
   
   const params = new URLSearchParams({
@@ -94,7 +94,7 @@ export function generateTopLangsUrl(
     layout = 'compact',
     hideBorder = true,
     langsCount = 8,
-    baseUrl = 'https://github-readme-stats.vercel.app',
+    baseUrl = 'https://github-readme-stats-sigma-five.vercel.app',
   } = options;
   
   const params = new URLSearchParams({
@@ -153,7 +153,7 @@ export function generateRepoCardUrl(
     theme = 'dark',
     hideBorder = true,
     showOwner = false,
-    baseUrl = 'https://github-readme-stats.vercel.app',
+    baseUrl = 'https://github-readme-stats-sigma-five.vercel.app',
   } = options;
   
   const params = new URLSearchParams({
@@ -199,9 +199,16 @@ export function generateTrophyUrl(
     noFrame?: boolean;
     row?: number;
     column?: number;
+    baseUrl?: string;
   } = {}
 ): string {
-  const { theme = 'tokyonight', noFrame = true, row = 1, column = 7 } = options;
+  const { 
+    theme = 'tokyonight', 
+    noFrame = true, 
+    row = 1, 
+    column = 7,
+    baseUrl = 'https://github-profile-trophy-one.vercel.app'
+  } = options;
   
   const params = new URLSearchParams({
     username,
@@ -211,7 +218,7 @@ export function generateTrophyUrl(
     column: String(column),
   });
   
-  return `https://github-profile-trophy.vercel.app/?${params.toString()}`;
+  return `${baseUrl.replace(/\/+$/, '')}/?${params.toString()}`;
 }
 
 /**

@@ -44,14 +44,22 @@ function buildStatsUrl(
   profile: { user: { username: string; followers: number; publicRepos: number }; repositories: { stars: number }[] },
   theme: string,
   statsUrl: string,
-  siteUrl: string
+  siteUrl: string,
+  options?: ReadmeOptions
 ): string {
   const username = profile.user.username;
+  const forceSelf = options?.forceSelfHosted;
 
   // Custom stats server override (e.g. self-hosted github-readme-stats)
   if (statsUrl) {
     const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
     return `${statsUrl}/api?${p.toString()}`;
+  }
+  
+  // Self-hosted API route
+  if (forceSelf && siteUrl) {
+    const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
+    return `${siteUrl}/api/stats?${p.toString()}`;
   }
 
   // Default: public github-readme-stats (works everywhere, no server needed)
@@ -62,7 +70,7 @@ function buildStatsUrl(
     hide_border: 'true',
     count_private: 'true',
   });
-  return `https://github-readme-stats.vercel.app/api?${p.toString()}`;
+  return `https://github-readme-stats-sigma-five.vercel.app/api?${p.toString()}`;
 }
 
 /**
@@ -74,11 +82,19 @@ function buildTopLangsUrl(
   theme: string,
   layout: string,
   statsUrl: string,
-  siteUrl: string
+  siteUrl: string,
+  options?: ReadmeOptions
 ): string {
+  const forceSelf = options?.forceSelfHosted;
+
   if (statsUrl) {
     const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
     return `${statsUrl}/api/top-langs/?${p.toString()}`;
+  }
+
+  if (forceSelf && siteUrl) {
+    const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
+    return `${siteUrl}/api/top-langs?${p.toString()}`;
   }
 
   // Default: public github-readme-stats top-langs
@@ -86,7 +102,7 @@ function buildTopLangsUrl(
     username, theme, layout, hide_border: 'true',
     langs_count: '8',
   });
-  return `https://github-readme-stats.vercel.app/api/top-langs/?${p.toString()}`;
+  return `https://github-readme-stats-sigma-five.vercel.app/api/top-langs/?${p.toString()}`;
 }
 
 /**
@@ -98,11 +114,19 @@ function buildPinUrl(
   theme: string,
   showOwner: boolean,
   statsUrl: string,
-  siteUrl: string
+  siteUrl: string,
+  options?: ReadmeOptions
 ): string {
+  const forceSelf = options?.forceSelfHosted;
+
   if (statsUrl) {
     const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
     return `${statsUrl}/api/pin/?${p.toString()}`;
+  }
+
+  if (forceSelf && siteUrl) {
+    const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
+    return `${siteUrl}/api/pin?${p.toString()}`;
   }
 
   // Default: public github-readme-stats pin
@@ -113,7 +137,7 @@ function buildPinUrl(
     hide_border: 'true',
     show_owner: String(showOwner),
   });
-  return `https://github-readme-stats.vercel.app/api/pin/?${p.toString()}`;
+  return `https://github-readme-stats-sigma-five.vercel.app/api/pin/?${p.toString()}`;
 }
 
 export interface ReadmeOptions {
@@ -123,6 +147,44 @@ export interface ReadmeOptions {
   streakUrl?: string;
   /** The origin used to build absolute self-hosted SVG URLs (e.g. https://yourdomain.com). Required when generating README for deployment. */
   siteUrl?: string;
+  /** Force using self-hosted API routes for all SVG cards */
+  forceSelfHosted?: boolean;
+  /** Status of external services to decide on fallbacks */
+  serviceStatus?: Record<string, boolean>;
+}
+
+/**
+ * Builds a trophies URL, using self-hosted fallback if specified or if official is down.
+ */
+function buildTrophiesUrl(
+  username: string,
+  theme: string,
+  siteUrl: string,
+  options?: ReadmeOptions
+): string {
+  const isDown = options?.serviceStatus?.['github-profile-trophy'] === false;
+  const isMirrorUp = options?.serviceStatus?.['trophy-mirror'] !== false;
+  const forceSelf = options?.forceSelfHosted;
+
+  // 1. Si se fuerza el propio y tenemos siteUrl (no en GitHub Pages)
+  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
+    const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
+    return `${siteUrl}/api/trophies?${p.toString()}`;
+  }
+
+  // 2. Si el oficial está caído, intentamos el espejo (mirror)
+  if (isDown && isMirrorUp) {
+    return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
+  }
+
+  // 3. Si el oficial está caído y el espejo también, y tenemos siteUrl propio
+  if (isDown && !isMirrorUp && siteUrl && !siteUrl.includes('github.io')) {
+    const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
+    return `${siteUrl}/api/trophies?${p.toString()}`;
+  }
+
+  // Por defecto el oficial
+  return `https://github-profile-trophy.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
 }
 
 // Interfaz de Estrategia de Plantilla (Patrón Strategy)
@@ -165,8 +227,8 @@ export class MinimalistStrategy implements IReadmeStrategy {
     // Stats
     readme += `## GitHub Stats\n\n`;
     readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'dark', statsUrl, siteUrl),
-      buildStatsUrl(profile, 'default', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'dark', statsUrl, siteUrl, options),
+      buildStatsUrl(profile, 'default', statsUrl, siteUrl, options),
       `${user.username}'s GitHub stats`
     ) + `\n\n`;
     
@@ -174,8 +236,8 @@ export class MinimalistStrategy implements IReadmeStrategy {
     if (topLanguages.length > 0) {
       readme += `## Top Languages\n\n`;
       readme += getAdaptiveImage(
-        buildTopLangsUrl(topLanguages, user.username, 'dark', 'compact', statsUrl, siteUrl),
-        buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl),
+        buildTopLangsUrl(topLanguages, user.username, 'dark', 'compact', statsUrl, siteUrl, options),
+        buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl, options),
         `Top Langs`
       ) + `\n\n`;
     }
@@ -264,14 +326,14 @@ export class PortfolioStrategy implements IReadmeStrategy {
     readme += `## 📊 GitHub Analytics\n\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl),
-      buildStatsUrl(profile, 'flat', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl, options),
+      buildStatsUrl(profile, 'flat', statsUrl, siteUrl, options),
       `${user.username}'s GitHub stats`,
       '180em'
     ) + '\n';
     readme += getAdaptiveImage(
-      buildTopLangsUrl(topLanguages, user.username, 'tokyonight', 'compact', statsUrl, siteUrl),
-      buildTopLangsUrl(topLanguages, user.username, 'flat', 'compact', statsUrl, siteUrl),
+      buildTopLangsUrl(topLanguages, user.username, 'tokyonight', 'compact', statsUrl, siteUrl, options),
+      buildTopLangsUrl(topLanguages, user.username, 'flat', 'compact', statsUrl, siteUrl, options),
       'Top Langs',
       '180em'
     ) + '\n\n';
@@ -292,8 +354,8 @@ export class PortfolioStrategy implements IReadmeStrategy {
       readme += `<div align="center">\n\n`;
       
       for (const repo of featuredRepos.slice(0, 4)) {
-        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', false, statsUrl, siteUrl);
-        const lightCard = buildPinUrl(repo, user.username, 'flat', false, statsUrl, siteUrl);
+        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', false, statsUrl, siteUrl, options);
+        const lightCard = buildPinUrl(repo, user.username, 'flat', false, statsUrl, siteUrl, options);
         readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
       }
       
@@ -423,8 +485,8 @@ export class CreativeStrategy implements IReadmeStrategy {
     readme += `## 🏆 GitHub Trophies\n\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      `https://github-profile-trophy.vercel.app/?username=${user.username}&theme=tokyonight&no-frame=true&row=1&column=7`,
-      `https://github-profile-trophy.vercel.app/?username=${user.username}&theme=flat&no-frame=true&row=1&column=7`,
+      buildTrophiesUrl(user.username, 'tokyonight', siteUrl, options),
+      buildTrophiesUrl(user.username, 'flat', siteUrl, options),
       'trophy'
     ) + '\n\n';
     readme += `</div>\n\n`;
@@ -435,8 +497,8 @@ export class CreativeStrategy implements IReadmeStrategy {
     readme += `<table>\n<tr>\n`;
     readme += `<td>\n\n`;
     readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl),
-      buildStatsUrl(profile, 'flat', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl, options),
+      buildStatsUrl(profile, 'flat', statsUrl, siteUrl, options),
       'Stats'
     ) + '\n\n';
     readme += `</td>\n<td>\n\n`;
@@ -455,8 +517,8 @@ export class CreativeStrategy implements IReadmeStrategy {
       
       for (const repo of topRepos) {
         // En tarjetas de proyectos mantenemos el link pero usamos img adaptativa
-        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', true, statsUrl, siteUrl);
-        const lightCard = buildPinUrl(repo, user.username, 'flat', true, statsUrl, siteUrl);
+        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', true, statsUrl, siteUrl, options);
+        const lightCard = buildPinUrl(repo, user.username, 'flat', true, statsUrl, siteUrl, options);
         readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
       }
       
@@ -561,13 +623,13 @@ export class TerminalStrategy implements IReadmeStrategy {
     readme += `## 📊 System Metrics\n\n`;
     readme += `<div align="center">\n\n`;
     readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'chartreuse-dark', statsUrl, siteUrl),
-      buildStatsUrl(profile, 'default', statsUrl, siteUrl),
+      buildStatsUrl(profile, 'chartreuse-dark', statsUrl, siteUrl, options),
+      buildStatsUrl(profile, 'default', statsUrl, siteUrl, options),
       'Stats'
     ) + '\n\n';
     readme += getAdaptiveImage(
-      buildTopLangsUrl(topLanguages, user.username, 'chartreuse-dark', 'compact', statsUrl, siteUrl),
-      buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl),
+      buildTopLangsUrl(topLanguages, user.username, 'chartreuse-dark', 'compact', statsUrl, siteUrl, options),
+      buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl, options),
       'Top Langs'
     ) + '\n\n';
     readme += `</div>\n\n`;
