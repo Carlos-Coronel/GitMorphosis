@@ -6,6 +6,9 @@ import { TemplateSelector } from '@/components/template-selector';
 import { ReadmePreview } from '@/components/readme-preview';
 import { ProfileStats } from '@/components/profile-stats';
 import { SocialLinksEditor, type SocialLink } from '@/components/social-links-editor';
+import { fetchGitHubProfile } from '@/lib/client/github-api';
+import { createReadmeBuilder } from '@/lib/application/readme-builder';
+import { GitHubProfile } from '@/lib/domain/types';
 import { 
   Github, 
   Sparkles, 
@@ -82,8 +85,10 @@ const EXAMPLE_USERS = [
 export function ProfileGenerator() {
   const [selectedTemplate, setSelectedTemplate] = useState('portfolio');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateResult | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<GitHubProfile | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const currentUsernameRef = useRef<string | null>(null);
@@ -94,54 +99,76 @@ export function ProfileGenerator() {
   const statsUrlRef = useRef('');
   const streakUrlRef = useRef('https://streak-stats.demolab.com');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Usar refs para valores que necesitamos en callbacks
   const selectedTemplateRef = useRef('portfolio');
+  // Cached profile to avoid re-fetching when only the template changes
+  const profileCacheRef = useRef<{ username: string; profile: GitHubProfile } | null>(null);
 
   const handleGenerate = useCallback(async (username: string, currentSocialLinks?: SocialLink[]) => {
     setIsLoading(true);
     setError(null);
-    
-    // Si es un nuevo usuario, reseteamos para permitir recarga del scraper
+
     if (username !== currentUsernameRef.current) {
       setSocialLinks([]);
       socialLinksRef.current = [];
+      profileCacheRef.current = null;
     }
-    
+
     setCurrentUsername(username);
     currentUsernameRef.current = username;
 
     try {
+      // ── Step 1: Fetch profile (use cache if same username) ──────────────
+      let profile: GitHubProfile;
+
+      if (profileCacheRef.current?.username === username) {
+        profile = profileCacheRef.current.profile;
+      } else {
+        setLoadingStep('Cargando perfil de GitHub...');
+        profile = await fetchGitHubProfile(username);
+        profileCacheRef.current = { username, profile };
+      }
+
+      // ── Step 2: Merge social links ──────────────────────────────────────
+      setLoadingStep('Procesando datos...');
       const linksToUse = currentSocialLinks || socialLinksRef.current;
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username, 
-          templateId: selectedTemplateRef.current,
-          socialLinks: linksToUse.filter(l => l.enabled && l.username),
-          statsUrl: statsUrlRef.current || undefined,
-          streakUrl: streakUrlRef.current,
-          siteUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
-        }),
+      if (linksToUse.length > 0) {
+        profile = {
+          ...profile,
+          user: {
+            ...profile.user,
+            socialLinks: linksToUse.filter(l => l.enabled && l.username),
+          },
+        };
+      }
+      setCurrentProfile(profile);
+
+      // ── Step 3: Generate README ─────────────────────────────────────────
+      setLoadingStep('Generando README...');
+      const builder = createReadmeBuilder();
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const generatedResult = builder.build(profile, selectedTemplateRef.current, {
+        statsUrl: statsUrlRef.current || undefined,
+        streakUrl: streakUrlRef.current,
+        siteUrl,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al generar README');
-      }
-
-      if (data.success && data.data) {
-        setResult(data.data);
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
+      setResult({
+        markdown: generatedResult.markdown,
+        templateId: generatedResult.templateId,
+        generatedAt: generatedResult.generatedAt.toISOString(),
+        profile: {
+          user: profile.user,
+          topLanguages: profile.topLanguages,
+          repositoryCount: profile.repositories.length,
+          pinnedCount: profile.pinnedRepos.length,
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
       setResult(null);
     } finally {
       setIsLoading(false);
+      setLoadingStep('');
     }
   }, []);
 
@@ -422,6 +449,7 @@ export function ProfileGenerator() {
                   markdown={result.markdown}
                   username={result.profile.user.username}
                   isLoading={isLoading}
+                  profile={currentProfile}
                 />
               </main>
             </div>
@@ -461,7 +489,7 @@ export function ProfileGenerator() {
                 <span className="cursor-blink"></span>
               </h3>
               <p className="text-muted-foreground">
-                Extrayendo datos del perfil, repositorios y lenguajes...
+                {loadingStep || 'Conectando con la API de GitHub...'}
               </p>
               <div className="mt-6 flex justify-center gap-1">
                 {[0, 1, 2].map((i) => (

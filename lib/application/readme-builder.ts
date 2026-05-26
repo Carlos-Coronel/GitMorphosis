@@ -46,21 +46,23 @@ function buildStatsUrl(
   statsUrl: string,
   siteUrl: string
 ): string {
-  // Total stars across all repos
-  const totalStars = profile.repositories.reduce((sum, r) => sum + (r.stars || 0), 0);
-  const base = statsUrl || `${siteUrl}/api/stats`;
+  const username = profile.user.username;
+
+  // Custom stats server override (e.g. self-hosted github-readme-stats)
+  if (statsUrl) {
+    const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
+    return `${statsUrl}/api?${p.toString()}`;
+  }
+
+  // Default: public github-readme-stats (works everywhere, no server needed)
   const p = new URLSearchParams({
-    username: profile.user.username,
+    username,
     theme,
     show_icons: 'true',
     hide_border: 'true',
-    stars: String(totalStars),
-    followers: String(profile.user.followers),
-    repos: String(profile.user.publicRepos),
+    count_private: 'true',
   });
-  // If using a custom external server, use that server's own path
-  if (statsUrl) return `${statsUrl}/api?${p.toString()}`;
-  return `${base}?${p.toString()}`;
+  return `https://github-readme-stats.vercel.app/api?${p.toString()}`;
 }
 
 /**
@@ -78,11 +80,13 @@ function buildTopLangsUrl(
     const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
     return `${statsUrl}/api/top-langs/?${p.toString()}`;
   }
-  const langsJson = JSON.stringify(
-    langs.slice(0, 8).map(l => ({ language: l.language, percentage: l.percentage, color: l.color }))
-  );
-  const p = new URLSearchParams({ username, theme, layout, hide_border: 'true', langs: langsJson });
-  return `${siteUrl}/api/top-langs?${p.toString()}`;
+
+  // Default: public github-readme-stats top-langs
+  const p = new URLSearchParams({
+    username, theme, layout, hide_border: 'true',
+    langs_count: '8',
+  });
+  return `https://github-readme-stats.vercel.app/api/top-langs/?${p.toString()}`;
 }
 
 /**
@@ -100,18 +104,16 @@ function buildPinUrl(
     const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
     return `${statsUrl}/api/pin/?${p.toString()}`;
   }
+
+  // Default: public github-readme-stats pin
   const p = new URLSearchParams({
     username,
     repo: repo.name,
-    description: repo.description || '',
-    language: repo.language || '',
-    stars: String(repo.stars),
-    forks: String(repo.forks),
     theme,
     hide_border: 'true',
     show_owner: String(showOwner),
   });
-  return `${siteUrl}/api/pin?${p.toString()}`;
+  return `https://github-readme-stats.vercel.app/api/pin/?${p.toString()}`;
 }
 
 export interface ReadmeOptions {
@@ -461,15 +463,16 @@ export class CreativeStrategy implements IReadmeStrategy {
       readme += '\n</div>\n\n';
     }
     
-    // Activity Snake — served by self-hosted /api/snake, no GitHub Actions required
+    // Activity Snake
+    // GitHub Actions Platane/snk public URL
+    const snakeDark = `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake-dark.svg`;
+    const snakeLight = `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake.svg`;
+
     readme += `## 🐍 Contribution Snake\n\n`;
     readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(
-      `${siteUrl}/api/snake?username=${user.username}&theme=tokyonight&hide_border=true`,
-      `${siteUrl}/api/snake?username=${user.username}&theme=flat&hide_border=true`,
-      'Snake animation'
-    ) + '\n\n';
+    readme += getAdaptiveImage(snakeDark, snakeLight, 'Snake animation') + '\n\n';
     readme += `</div>\n\n`;
+
 
     
     // Connect

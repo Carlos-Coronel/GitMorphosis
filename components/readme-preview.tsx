@@ -19,14 +19,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { GitHubProfile } from '@/lib/domain/types';
+import { statsDataUri } from '@/lib/client/svg/stats-card';
+import { topLangsDataUri } from '@/lib/client/svg/top-langs-card';
+import { pinDataUri } from '@/lib/client/svg/pin-card';
+import { snakeDataUri } from '@/lib/client/svg/snake-card';
 
 interface ReadmePreviewProps {
   markdown: string;
   username: string;
   isLoading?: boolean;
+  /** When provided, the preview uses client-side generated SVGs instead of external URLs */
+  profile?: GitHubProfile | null;
 }
 
-export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewProps) {
+export function ReadmePreview({ markdown, username, isLoading, profile }: ReadmePreviewProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -109,30 +116,97 @@ export function ReadmePreview({ markdown, username, isLoading }: ReadmePreviewPr
   }, [markdown, username, previewTheme]);
 
   // ── Core Markdown → HTML converter ──────────────────────────────────────────
-  // Accepts a `theme` arg so it can be called both reactively (for the live
-  // preview) and on print (where the theme is fixed at call-time).
   const renderMarkdown = (md: string, theme: 'dark' | 'light'): string => {
     const isDark = theme === 'dark';
+    const svgTheme = isDark ? 'tokyonight' : 'flat';
+
+    // ── 0. Pre-generate local SVG data URIs from profile ────────────────────
+    // Build a map: external URL pattern → local data:URI
+    // This makes the preview work instantly without any network requests.
+    const localUriMap = new Map<string, string>();
+
+    if (profile) {
+      const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
+
+      // Stats card
+      const statsUri = statsDataUri({
+        username: profile.user.username,
+        theme: svgTheme,
+        stars: totalStars,
+        followers: profile.user.followers,
+        repos: profile.user.publicRepos,
+        showIcons: true,
+        hideBorder: true,
+      });
+      localUriMap.set('stats', statsUri);
+
+      // Top langs card
+      if (profile.topLanguages.length > 0) {
+        const langsUri = topLangsDataUri({
+          username: profile.user.username,
+          languages: profile.topLanguages,
+          theme: svgTheme,
+          hideBorder: true,
+          layout: 'compact',
+        });
+        localUriMap.set('top-langs', langsUri);
+      }
+
+      // Snake
+      const snake = snakeDataUri({
+        username: profile.user.username,
+        theme: svgTheme,
+        hideBorder: true,
+      });
+      localUriMap.set('snake', snake);
+
+      // Pin cards — one per pinned repo
+      for (const repo of profile.pinnedRepos.slice(0, 6)) {
+        const uri = pinDataUri({
+          username: profile.user.username,
+          repo: repo.name,
+          description: repo.description,
+          language: repo.language,
+          stars: repo.stars,
+          forks: repo.forks,
+          theme: svgTheme,
+          hideBorder: true,
+          showOwner: true,
+        });
+        localUriMap.set(`pin:${repo.name}`, uri);
+      }
+    }
+
+    // Helper: swap an external URL to a local data URI if we have one
+    const resolveUrl = (url: string): string => {
+      if (url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?')) {
+        return localUriMap.get('stats') || url;
+      }
+      if (url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs')) {
+        return localUriMap.get('top-langs') || url;
+      }
+      if (url.includes('/api/snake') || url.includes('github-contribution-grid-snake')) {
+        return localUriMap.get('snake') || url;
+      }
+      // Pin: match repo name from URL
+      const pinMatch = url.match(/[?&]repo=([^&]+)/);
+      if (pinMatch && (url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin'))) {
+        return localUriMap.get(`pin:${pinMatch[1]}`) || url;
+      }
+      return url;
+    };
 
     // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
-    // The readme-builder emits:
-    //   <picture>
-    //     <source media="(prefers-color-scheme: dark)"  srcset="<darkUrl>">
-    //     <source media="(prefers-color-scheme: light)" srcset="<lightUrl>">
-    //     <img src="<lightUrl>" alt="..." [height="..."] />
-    //   </picture>
-    // We pick darkUrl or lightUrl based on the current preview theme.
     let processed = md.replace(
       /<picture>\s*<source[^>]*media="[^"]*dark[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<source[^>]*media="[^"]*light[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<img[^>]*alt="([^"]*)"[^>]*(?:height="([^"]*)")?[^>]*\/>\s*<\/picture>/gi,
       (_match, darkSrc, lightSrc, alt, height) => {
-        const src = isDark ? darkSrc : lightSrc;
-        const isStatsCard = src.includes('/api/stats') || src.includes('/api/top-langs')
-          || src.includes('/api/pin') || src.includes('/api/snake')
-          || src.includes('streak-stats') || src.includes('github-readme-stats')
-          || src.includes('github-profile-trophy') || src.includes('capsule-render')
-          || src.includes('readme-typing-svg');
+        const rawSrc = isDark ? darkSrc : lightSrc;
+        const src = resolveUrl(rawSrc);
+        const isCard = src.startsWith('data:') || rawSrc.includes('/api/')
+          || rawSrc.includes('github-readme-stats') || rawSrc.includes('streak-stats')
+          || rawSrc.includes('capsule-render') || rawSrc.includes('readme-typing-svg');
         const heightAttr = height ? ` height="${height}"` : '';
-        const classAttr = isStatsCard ? ' class="stats-card"' : '';
+        const classAttr = isCard ? ' class="stats-card"' : '';
         return `<img src="${src}" alt="${alt || ''}"${heightAttr}${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
       }
     );
