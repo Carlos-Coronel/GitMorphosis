@@ -40,6 +40,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
   const [isFullscreen, setIsFullscreen] = useState(false);
   // previewTheme drives which variant of the adaptive images to show
   const [previewTheme, setPreviewTheme] = useState<'dark' | 'light'>('dark');
+  const [isFaithfulPreview, setIsFaithfulPreview] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -51,7 +52,25 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(markdown);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(markdown);
+      } else {
+        // Fallback para contextos no seguros o navegadores antiguos
+        const textArea = document.createElement('textarea');
+        textArea.value = markdown;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback de copia falló:', err);
+        }
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -121,100 +140,111 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
     const isDark = theme === 'dark';
     const svgTheme = isDark ? 'tokyonight' : 'flat';
 
-    // ── 0. Pre-generate local SVG data URIs from profile ────────────────────
-    // Build a map: external URL pattern → local data:URI
-    // This makes the preview work instantly without any network requests.
-    const localUriMap = new Map<string, string>();
+    // ── 0. localUriMap no longer pre-generated to support multiple themes ──
 
-    if (profile) {
-      const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
+    const resolveUrl = (url: string): string => {
+      if (isFaithfulPreview || !profile) return url;
 
-      // Stats card
-      const statsUri = statsDataUri({
-        username: profile.user.username,
-        theme: svgTheme,
-        stars: totalStars,
-        followers: profile.user.followers,
-        repos: profile.user.publicRepos,
-        showIcons: true,
-        hideBorder: true,
-      });
-      localUriMap.set('stats', statsUri);
+      // Extract theme from URL to match the template's specified theme
+      const themeMatch = url.match(/[?&]theme=([^&]+)/);
+      const urlTheme = themeMatch ? themeMatch[1] : svgTheme;
+      
+      const isStats = url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?') || url.includes('github-readme-stats-sigma-five.vercel.app/api?');
+      const isLangs = url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs') || url.includes('github-readme-stats-sigma-five.vercel.app/api/top-langs');
+      const isTrophy = url.includes('github-profile-trophy.vercel.app') || url.includes('github-profile-trophy-one.vercel.app') || url.includes('/api/trophies');
+      const isSnake = url.includes('/api/snake') || url.includes('github-contribution-grid-snake');
+      const isPin = url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin') || url.includes('github-readme-stats-sigma-five.vercel.app/api/pin');
 
-      // Top langs card
-      if (profile.topLanguages.length > 0) {
-        const langsUri = topLangsDataUri({
+      if (isStats) {
+        const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
+        return statsDataUri({
+          username: profile.user.username,
+          theme: urlTheme,
+          stars: totalStars,
+          followers: profile.user.followers,
+          repos: profile.user.publicRepos,
+          showIcons: true,
+          hideBorder: true,
+        });
+      }
+      
+      if (isLangs) {
+        return topLangsDataUri({
           username: profile.user.username,
           languages: profile.topLanguages,
-          theme: svgTheme,
+          theme: urlTheme,
           hideBorder: true,
           layout: 'compact',
         });
-        localUriMap.set('top-langs', langsUri);
       }
 
-      // Trophies
-      const trophies = trophyDataUri({
-        username: profile.user.username,
-        theme: svgTheme,
-        stats: {
-          stars: totalStars,
-          commits: profile.user.publicRepos * 30,
-          prs: profile.user.publicRepos * 5,
-          issues: profile.user.publicRepos * 2,
-          followers: profile.user.followers,
-          repos: profile.user.publicRepos,
-        },
-        hideBorder: true,
-      });
-      localUriMap.set('trophies', trophies);
-
-      // Snake
-      const snake = snakeDataUri({
-        username: profile.user.username,
-        theme: svgTheme,
-        hideBorder: true,
-      });
-      localUriMap.set('snake', snake);
-
-      // Pin cards — one per pinned repo
-      for (const repo of profile.pinnedRepos.slice(0, 6)) {
-        const uri = pinDataUri({
+      if (isTrophy) {
+        const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
+        return trophyDataUri({
           username: profile.user.username,
-          repo: repo.name,
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          forks: repo.forks,
-          theme: svgTheme,
-          hideBorder: true,
-          showOwner: true,
+          theme: urlTheme,
+          stats: {
+            stars: totalStars,
+            commits: profile.user.publicRepos * 30,
+            prs: profile.user.publicRepos * 5,
+            issues: profile.user.publicRepos * 2,
+            followers: profile.user.followers,
+            repos: profile.user.publicRepos,
+          },
+          hideBorder: url.includes('no-frame=true') || url.includes('hide_border=true'),
         });
-        localUriMap.set(`pin:${repo.name}`, uri);
       }
-    }
+      
+      if (isSnake) {
+        return snakeDataUri({
+          username: profile.user.username,
+          theme: urlTheme,
+          hideBorder: true,
+        });
+      }
 
-    // Helper: swap an external URL to a local data URI if we have one
-    const resolveUrl = (url: string): string => {
-      if (url.includes('github-profile-trophy.vercel.app') || url.includes('github-profile-trophy-one.vercel.app') || url.includes('/api/trophies')) {
-        return localUriMap.get('trophies') || url;
+      if (isPin) {
+        const pinMatch = url.match(/[?&]repo=([^&]+)/);
+        if (pinMatch) {
+          const repoName = pinMatch[1];
+          const repo = profile.repositories.find(r => r.name === repoName) || profile.pinnedRepos.find(r => r.name === repoName);
+          if (repo) {
+            return pinDataUri({
+              username: profile.user.username,
+              repo: repo.name,
+              description: repo.description,
+              language: repo.language,
+              stars: repo.stars,
+              forks: repo.forks,
+              theme: urlTheme,
+              hideBorder: true,
+              showOwner: true,
+            });
+          }
+        }
       }
-      if (url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?') || url.includes('github-readme-stats-sigma-five.vercel.app/api?')) {
-        return localUriMap.get('stats') || url;
-      }
-      if (url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs') || url.includes('github-readme-stats-sigma-five.vercel.app/api/top-langs')) {
-        return localUriMap.get('top-langs') || url;
-      }
-      if (url.includes('/api/snake') || url.includes('github-contribution-grid-snake')) {
-        return localUriMap.get('snake') || url;
-      }
-      // Pin: match repo name from URL
-      const pinMatch = url.match(/[?&]repo=([^&]+)/);
-      if (pinMatch && (url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin') || url.includes('github-readme-stats-sigma-five.vercel.app/api/pin'))) {
-        return localUriMap.get(`pin:${pinMatch[1]}`) || url;
-      }
+      
       return url;
     };
+
+    function inline(text: string): string {
+      return text
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g,
+          (_match, alt, src, href) => `<a href="${href}" target="_blank" rel="noopener noreferrer"><img src="${resolveUrl(src)}" alt="${alt}" loading="lazy" onerror="this.style.opacity='0.3'" /></a>`)
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
+          const resolvedSrc = resolveUrl(src);
+          const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats') || src.includes('github-readme-stats-sigma-five')
+            || src.includes('github-profile-trophy') || src.includes('streak-stats') || src.includes('capsule-render')
+            || src.includes('shields.io') || src.includes('komarev');
+          const classAttr = isStatsCard ? ' class="stats-card"' : '';
+          return `<img src="${resolvedSrc}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
+        })
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    }
 
     // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
     let processed = md.replace(
@@ -232,61 +262,54 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       }
     );
 
-    // ── 2. Remaining Markdown ────────────────────────────────────────────────
-    let html = processed
-      // Fenced code blocks (must come before inline code)
-      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-      // Headers
-      .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-      // Bold & italic
-      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Inline code
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      // Stand-alone plain ![]() images (not already inside a <picture>)
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
-        const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats') || src.includes('github-readme-stats-sigma-five')
-          || src.includes('github-profile-trophy') || src.includes('streak-stats') || src.includes('capsule-render')
-          || src.includes('shields.io') || src.includes('komarev');
-        const classAttr = isStatsCard ? ' class="stats-card"' : '';
-        return `<img src="${src}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
-      })
-      // [![badge](img)](url) — badge links
-      .replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g,
-        '<a href="$3" target="_blank" rel="noopener noreferrer"><img src="$2" alt="$1" loading="lazy" /></a>')
-      // Regular links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      // Blockquotes
-      .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
-      // Horizontal rules
-      .replace(/^---$/gm, '<hr />')
-      // Unordered list items
-      .replace(/^[*-] (.*$)/gm, '<li>$1</li>')
-      // Tables
-      .replace(/\|(.+)\|/g, (match) => {
-        const cells = match.split('|').filter(c => c.trim());
-        if (cells.every(c => /^[-:\s]+$/.test(c))) return '';
-        const tag = 'td';
-        return `<tr>${cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('')}</tr>`;
-      })
-      // Paragraphs & line breaks
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br />');
+    // ── 2. Block processing ────────────────────────────────────────────────
+    const blocks = processed.trim().split(/\n\n+/);
+    const htmlBlocks = blocks.map(block => {
+      if (block.startsWith('```')) {
+        return block.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+      }
+      if (block.startsWith('#')) {
+        return block
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          .replace(/\n/g, '');
+      }
+      if (block === '---') {
+        return '<hr />';
+      }
+      if (block.startsWith('>')) {
+        return `<blockquote>${inline(block.replace(/^> /gm, '')).replace(/\n/g, '<br />')}</blockquote>`;
+      }
+      if (block.match(/^[*-] /m)) {
+        const items = block.split('\n')
+          .filter(line => line.trim())
+          .map(line => `<li>${inline(line.replace(/^[*-] /, ''))}</li>`)
+          .join('');
+        return `<ul>${items}</ul>`;
+      }
+      if (block.includes('|') && block.includes('\n')) {
+        const lines = block.split('\n').filter(l => l.trim());
+        const rows = lines.filter(l => !l.match(/^\|?[-:\s|]+\|?$/)).map(line => {
+          const cells = line.split('|').filter((c, i, a) => {
+            if (i === 0 && c.trim() === '') return false;
+            if (i === a.length - 1 && c.trim() === '') return false;
+            return true;
+          });
+          return `<tr>${cells.map(c => `<td>${inline(c.trim())}</td>`).join('')}</tr>`;
+        }).join('');
+        return `<table>${rows}</table>`;
+      }
+      return `<p>${inline(block).replace(/\n/g, '<br />')}</p>`;
+    });
 
-    if (!html.startsWith('<')) {
-      html = `<p>${html}</p>`;
-    }
-
-    return html;
+    return htmlBlocks.join('\n');
   };
 
   // Memoize the rendered HTML so it only recomputes when markdown or theme changes
   const renderedHtml = useMemo(
     () => renderMarkdown(markdown, previewTheme),
-    [markdown, previewTheme]
+    [markdown, previewTheme, isFaithfulPreview]
   );
 
   // ── Preview background & text color per theme ────────────────────────────
@@ -338,6 +361,27 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
             >
               <Sun className="h-3.5 w-3.5" />
               Claro
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/60">
+            <label htmlFor="faithful-preview" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
+              Preview Real
+            </label>
+            <button
+              id="faithful-preview"
+              onClick={() => setIsFaithfulPreview(!isFaithfulPreview)}
+              className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+                isFaithfulPreview ? "bg-primary" : "bg-input"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                  isFaithfulPreview ? "translate-x-4" : "translate-x-0"
+                )}
+              />
             </button>
           </div>
 
@@ -410,6 +454,25 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
           </Button>
         </div>
       </div>
+
+      {!isFaithfulPreview && activeTab === 'preview' && (
+        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-300">
+          <div className="h-5 w-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-blue-500 text-xs font-bold">i</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-xs text-blue-400 leading-relaxed">
+              <span className="font-semibold text-blue-300">Optimización de vista previa activa:</span> Se están usando SVGs locales. El README final usará URLs públicas de GitHub.
+              <button 
+                onClick={() => setIsFaithfulPreview(true)}
+                className="ml-2 underline hover:text-blue-300 transition-colors"
+              >
+                Cambiar a Preview Real
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className={cn(
         "relative rounded-lg border border-border/50 overflow-hidden shadow-lg shadow-primary/10",

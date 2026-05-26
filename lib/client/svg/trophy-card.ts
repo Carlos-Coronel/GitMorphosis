@@ -74,12 +74,12 @@ export function generateTrophyCardSvg(params: TrophyCardParams): string {
   const t = THEMES[theme] ?? THEMES.tokyonight;
 
   const trophySpecs = [
-    { label: 'Stars', value: stats.stars, thresholds: [0, 10, 50, 100, 500, 1000] },
-    { label: 'Commits', value: stats.commits, thresholds: [0, 100, 500, 1000, 2000, 5000] },
-    { label: 'PRs', value: stats.prs, thresholds: [0, 10, 50, 100, 200, 500] },
-    { label: 'Issues', value: stats.issues, thresholds: [0, 10, 50, 100, 200, 500] },
-    { label: 'Followers', value: stats.followers, thresholds: [0, 10, 50, 100, 200, 500] },
-    { label: 'Repos', value: stats.repos, thresholds: [0, 5, 10, 20, 50, 100] },
+    { label: 'Stars', value: stats.stars, icon: '⭐', thresholds: [0, 10, 50, 100, 500, 1000] },
+    { label: 'Commits', value: stats.commits, icon: '📝', thresholds: [0, 100, 500, 1000, 2000, 5000] },
+    { label: 'PRs', value: stats.prs, icon: '🔀', thresholds: [0, 10, 50, 100, 200, 500] },
+    { label: 'Issues', value: stats.issues, icon: '❗️', thresholds: [0, 10, 50, 100, 200, 500] },
+    { label: 'Followers', value: stats.followers, icon: '👥', thresholds: [0, 10, 50, 100, 200, 500] },
+    { label: 'Repos', value: stats.repos, icon: '📁', thresholds: [0, 5, 10, 20, 50, 100] },
   ];
 
   const trophies = trophySpecs.map(spec => {
@@ -97,9 +97,10 @@ export function generateTrophyCardSvg(params: TrophyCardParams): string {
     return `
     <g transform="translate(${x},${y})">
       <rect width="${trophyW}" height="${trophyH}" rx="8" fill="${t.bg}" stroke="${tr.color}" stroke-width="2" opacity="0.8"/>
-      <text x="${trophyW / 2}" y="25" fill="${t.title}" font-size="11" font-weight="700" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.label}</text>
-      <text x="${trophyW / 2}" y="60" fill="${tr.color}" font-size="28" font-weight="900" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.rank}</text>
-      <text x="${trophyW / 2}" y="85" fill="${t.text}" font-size="10" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.value.toLocaleString()}</text>
+      <text x="${trophyW / 2}" y="22" fill="${t.title}" font-size="10" font-weight="700" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.label}</text>
+      <text x="${trophyW / 2}" y="45" font-size="20" text-anchor="middle">${tr.icon}</text>
+      <text x="${trophyW / 2}" y="75" fill="${tr.color}" font-size="24" font-weight="900" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.rank}</text>
+      <text x="${trophyW / 2}" y="92" fill="${t.text}" font-size="9" text-anchor="middle" font-family="'Segoe UI',Ubuntu,sans-serif">${tr.value.toLocaleString()}</text>
     </g>`;
   }).join('');
 

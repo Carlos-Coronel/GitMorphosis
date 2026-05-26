@@ -187,6 +187,141 @@ function buildTrophiesUrl(
   return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
 }
 
+/**
+ * Genera la sección del Snake de contribuciones
+ */
+function buildSnakeSection(username: string): string {
+  const snakeDark = `https://raw.githubusercontent.com/${username}/${username}/output/github-contribution-grid-snake-dark.svg`;
+  const snakeLight = `https://raw.githubusercontent.com/${username}/${username}/output/github-contribution-grid-snake.svg`;
+
+  let section = `## 🐍 Contribution Snake\n\n`;
+  section += `<div align="center">\n`;
+  section += getAdaptiveImage(snakeDark, snakeLight, 'Snake animation') + '\n';
+  section += `</div>\n\n`;
+  
+  section += `<!--\n`;
+  section += `💡 TIP: Para que el Snake funcione, debes configurar un GitHub Action que lo genere.\n`;
+  section += `Crea un archivo en .github/workflows/snake.yml con el siguiente contenido:\n\n`;
+  section += `name: generate animation\n\n`;
+  section += `on:\n`;
+  section += `  schedule:\n`;
+  section += `    - cron: "0 */24 * * *"\n`;
+  section += `  workflow_dispatch:\n`;
+  section += `  push:\n`;
+  section += `    branches:\n`;
+  section += `    - main\n\n`;
+  section += `jobs:\n`;
+  section += `  generate:\n`;
+  section += `    runs-on: ubuntu-latest\n`;
+  section += `    timeout-minutes: 5\n\n`;
+  section += `    steps:\n`;
+  section += `      - name: generate github-contribution-grid-snake.svg\n`;
+  section += `        uses: Platane/snk/svg-only@v3\n`;
+  section += `        with:\n`;
+  section += `          github_user_name: \${{ github.repository_owner }}\n`;
+  section += `          outputs: |\n`;
+  section += `            dist/github-contribution-grid-snake.svg\n`;
+  section += `            dist/github-contribution-grid-snake-dark.svg?palette=github-dark\n\n`;
+  section += `      - name: push github-contribution-grid-snake.svg to the output branch\n`;
+  section += `        uses: crazy-max/ghaction-github-pages@v3.1.0\n`;
+  section += `        with:\n`;
+  section += `          target_branch: output\n`;
+  section += `          build_dir: dist\n`;
+  section += `        env:\n`;
+  section += `          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\n`;
+  section += `-->\n\n`;
+  
+  return section;
+}
+
+/**
+ * Genera la sección de estadísticas de GitHub
+ */
+function buildStatsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
+  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+  
+  return getAdaptiveImage(
+    buildStatsUrl(profile, darkTheme, statsUrl, siteUrl, options),
+    buildStatsUrl(profile, lightTheme, statsUrl, siteUrl, options),
+    `${profile.user.username}'s GitHub stats`
+  );
+}
+
+/**
+ * Genera la sección de lenguajes más usados
+ */
+function buildTopLangsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, layout: string = 'compact', options?: ReadmeOptions): string {
+  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+  
+  if (profile.topLanguages.length === 0) return '';
+  
+  return getAdaptiveImage(
+    buildTopLangsUrl(profile.topLanguages, profile.user.username, darkTheme, layout, statsUrl, siteUrl, options),
+    buildTopLangsUrl(profile.topLanguages, profile.user.username, lightTheme, layout, statsUrl, siteUrl, options),
+    'Top Languages'
+  );
+}
+
+/**
+ * Genera la sección de trofeos
+ */
+function buildTrophiesSection(username: string, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
+  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+  
+  return getAdaptiveImage(
+    buildTrophiesUrl(username, darkTheme, siteUrl, options),
+    buildTrophiesUrl(username, lightTheme, siteUrl, options),
+    'GitHub Trophies'
+  );
+}
+
+/**
+ * Genera la sección de racha (streak)
+ */
+function buildStreakSection(username: string, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
+  const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
+  
+  return getAdaptiveImage(
+    `${streakUrl}/?user=${username}&theme=${darkTheme}&hide_border=true`,
+    `${streakUrl}/?user=${username}&theme=${lightTheme}&hide_border=true`,
+    'GitHub Streak'
+  );
+}
+
+/**
+ * Genera la sección de gráfico de actividad
+ */
+function buildActivityGraphSection(username: string, darkTheme: string = 'tokyo-night', lightTheme: string = 'github'): string {
+  return getAdaptiveImage(
+    `https://github-readme-activity-graph.vercel.app/graph?username=${username}&theme=${darkTheme}&hide_border=true`,
+    `https://github-readme-activity-graph.vercel.app/graph?username=${username}&theme=${lightTheme}&hide_border=true`,
+    'Activity Graph'
+  );
+}
+
+/**
+ * Genera la sección de proyectos destacados
+ */
+function buildFeaturedProjectsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, limit: number = 4, showOwner: boolean = false, options?: ReadmeOptions): string {
+  const { user, repositories, pinnedRepos } = profile;
+  const featuredRepos = pinnedRepos.length > 0 ? pinnedRepos : repositories.filter(r => !r.isForked).slice(0, 6);
+  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
+  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+  
+  if (featuredRepos.length === 0) return '';
+  
+  let section = `<div align="center">\n`;
+  for (const repo of featuredRepos.slice(0, limit)) {
+    const darkCard = buildPinUrl(repo, user.username, darkTheme, showOwner, statsUrl, siteUrl, options);
+    const lightCard = buildPinUrl(repo, user.username, lightTheme, showOwner, statsUrl, siteUrl, options);
+    section += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
+  }
+  section += `</div>\n\n`;
+  return section;
+}
+
 // Interfaz de Estrategia de Plantilla (Patrón Strategy)
 export interface IReadmeStrategy {
   id: string;
@@ -202,11 +337,8 @@ export class MinimalistStrategy implements IReadmeStrategy {
   description = 'Perfil limpio y simple con información esencial';
   
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
-    const { user, repositories, topLanguages } = profile;
+    const { user, repositories } = profile;
     const topRepos = repositories.filter(r => !r.isForked).slice(0, 6);
-    
-    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -226,20 +358,12 @@ export class MinimalistStrategy implements IReadmeStrategy {
     
     // Stats
     readme += `## GitHub Stats\n\n`;
-    readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'dark', statsUrl, siteUrl, options),
-      buildStatsUrl(profile, 'default', statsUrl, siteUrl, options),
-      `${user.username}'s GitHub stats`
-    ) + `\n\n`;
+    readme += buildStatsSection(profile, 'dark', 'default', options) + `\n\n`;
     
     // Languages
-    if (topLanguages.length > 0) {
+    if (profile.topLanguages.length > 0) {
       readme += `## Top Languages\n\n`;
-      readme += getAdaptiveImage(
-        buildTopLangsUrl(topLanguages, user.username, 'dark', 'compact', statsUrl, siteUrl, options),
-        buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl, options),
-        `Top Langs`
-      ) + `\n\n`;
+      readme += buildTopLangsSection(profile, 'dark', 'default', 'compact', options) + `\n\n`;
     }
     
     // Projects
@@ -283,17 +407,12 @@ export class PortfolioStrategy implements IReadmeStrategy {
   description = 'Portafolio profesional con exhibición de habilidades y destacados de proyectos';
   
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
-    const { user, repositories, topLanguages, pinnedRepos } = profile;
-    const featuredRepos = pinnedRepos.length > 0 ? pinnedRepos : repositories.filter(r => !r.isForked).slice(0, 6);
-    
-    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-    const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
-    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+    const { user, topLanguages } = profile;
     
     let readme = '';
     
     // Hero Section with animated typing
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     readme += `# ${user.name || user.username}\n\n`;
     if (user.bio) {
       readme += `### ${user.bio}\n\n`;
@@ -312,7 +431,7 @@ export class PortfolioStrategy implements IReadmeStrategy {
     
     // Tech Stack
     readme += `## 🛠️ Tech Stack\n\n`;
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     
     for (const lang of topLanguages.slice(0, 8)) {
       const badgeName = lang.language.replace(/\s+/g, '_');
@@ -320,51 +439,36 @@ export class PortfolioStrategy implements IReadmeStrategy {
       const topicUrl = `https://github.com/topics/${lang.language.toLowerCase().replace(/\s+/g, '-')}`;
       readme += `[![${lang.language}](https://img.shields.io/badge/${badgeName}-${color}?style=for-the-badge&logo=${lang.language.toLowerCase()}&logoColor=white)](${topicUrl}) `;
     }
-    readme += '\n\n</div>\n\n';
+    readme += `\n</div>\n\n`;
     
     // GitHub Stats
     readme += `## 📊 GitHub Analytics\n\n`;
-    readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl, options),
-      buildStatsUrl(profile, 'flat', statsUrl, siteUrl, options),
-      `${user.username}'s GitHub stats`,
-      '180em'
-    ) + '\n';
-    readme += getAdaptiveImage(
-      buildTopLangsUrl(topLanguages, user.username, 'tokyonight', 'compact', statsUrl, siteUrl, options),
-      buildTopLangsUrl(topLanguages, user.username, 'flat', 'compact', statsUrl, siteUrl, options),
-      'Top Langs',
-      '180em'
-    ) + '\n\n';
+    readme += `<div align="center">\n`;
+    readme += buildStatsSection(profile, 'tokyonight', 'flat', options) + '\n';
+    readme += buildTopLangsSection(profile, 'tokyonight', 'flat', 'compact', options) + '\n';
     readme += `</div>\n\n`;
     
     // Streak Stats
-    readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(
-      `${streakUrl}/?user=${user.username}&theme=tokyonight&hide_border=true`,
-      `${streakUrl}/?user=${user.username}&theme=flat&hide_border=true`,
-      'GitHub Streak'
-    ) + '\n\n';
+    readme += `<div align="center">\n`;
+    readme += buildStreakSection(user.username, 'tokyonight', 'flat', options) + '\n';
     readme += `</div>\n\n`;
     
     // Featured Projects
-    if (featuredRepos.length > 0) {
-      readme += `## 🚀 Featured Projects\n\n`;
-      readme += `<div align="center">\n\n`;
-      
-      for (const repo of featuredRepos.slice(0, 4)) {
-        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', false, statsUrl, siteUrl, options);
-        const lightCard = buildPinUrl(repo, user.username, 'flat', false, statsUrl, siteUrl, options);
-        readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
-      }
-      
-      readme += '\n</div>\n\n';
-    }
+    readme += `## 🚀 Featured Projects\n\n`;
+    readme += buildFeaturedProjectsSection(profile, 'tokyonight', 'flat', 4, false, options);
+    
+    // Activity Snake
+    readme += buildSnakeSection(user.username);
+    
+    // Activity Graph
+    readme += `## 📈 Contribution Graph\n\n`;
+    readme += `<div align="center">\n`;
+    readme += buildActivityGraphSection(user.username) + '\n';
+    readme += `</div>\n\n`;
     
     // Connect Section
     readme += `## 🤝 Let's Connect\n\n`;
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     readme += `[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](${user.profileUrl})`;
     
     if (user.socialLinks && user.socialLinks.length > 0) {
@@ -381,20 +485,12 @@ export class PortfolioStrategy implements IReadmeStrategy {
         readme += `\n[![Website](https://img.shields.io/badge/Website-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](${user.blog})`;
       }
     }
-    readme += '\n\n</div>\n\n';
-    
-    // Activity Graph
-    readme += `## 📈 Contribution Graph\n\n`;
-    readme += getAdaptiveImage(
-      `https://github-readme-activity-graph.vercel.app/graph?username=${user.username}&theme=tokyo-night&hide_border=true`,
-      `https://github-readme-activity-graph.vercel.app/graph?username=${user.username}&theme=github&hide_border=true`,
-      'Activity Graph'
-    ) + '\n\n';
+    readme += `\n</div>\n\n`;
     
     // Footer
     readme += `---\n\n`;
-    readme += `<div align="center">\n\n`;
-    readme += `*⭐ From [${user.username}](${user.profileUrl}) with ❤️*\n\n`;
+    readme += `<div align="center">\n`;
+    readme += `*⭐ From [${user.username}](${user.profileUrl}) with ❤️*\n`;
     readme += `</div>\n`;
     
     return readme;
@@ -408,26 +504,21 @@ export class CreativeStrategy implements IReadmeStrategy {
   description = 'Diseño único y llamativo con animaciones y elementos creativos';
   
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
-    const { user, repositories, topLanguages } = profile;
-    const topRepos = repositories.filter(r => !r.isForked).slice(0, 4);
-    
-    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-    const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
-    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
+    const { user, topLanguages } = profile;
     
     let readme = '';
     
     // Animated Header
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     readme += getAdaptiveImage(
       `https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=${encodeURIComponent(user.name || user.username)}&fontSize=50&fontColor=fff&animation=twinkling&fontAlignY=35&desc=${encodeURIComponent(user.bio || 'Developer')}&descAlignY=55&descSize=18`,
       `https://capsule-render.vercel.app/api?type=waving&color=00B4AB&height=200&section=header&text=${encodeURIComponent(user.name || user.username)}&fontSize=50&fontColor=fff&animation=twinkling&fontAlignY=35&desc=${encodeURIComponent(user.bio || 'Developer')}&descAlignY=55&descSize=18`,
       'Header'
-    ) + '\n\n';
+    ) + '\n';
     readme += `</div>\n\n`;
     
     // Typing SVG
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     const skillsList = topLanguages.slice(0, 6).map(l => l.language).join(' | ');
     const lines = [
       'Welcome to my GitHub Profile!',
@@ -438,7 +529,7 @@ export class CreativeStrategy implements IReadmeStrategy {
       `https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=58A6FF&center=true&vCenter=true&random=false&width=600&lines=${encodedLines}`,
       `https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=3178c6&center=true&vCenter=true&random=false&width=600&lines=${encodedLines}`,
       'Typing SVG'
-    ) + '\n\n';
+    ) + '\n';
     readme += `</div>\n\n`;
     
     // About with icons
@@ -456,7 +547,7 @@ export class CreativeStrategy implements IReadmeStrategy {
     
     // Skills Matrix
     readme += `## 🎯 Skills & Technologies\n\n`;
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     readme += `| Category | Technologies |\n`;
     readme += `|----------|-------------|\n`;
     
@@ -483,12 +574,8 @@ export class CreativeStrategy implements IReadmeStrategy {
     
     // Stats with Trophy
     readme += `## 🏆 GitHub Trophies\n\n`;
-    readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(
-      buildTrophiesUrl(user.username, 'tokyonight', siteUrl, options),
-      buildTrophiesUrl(user.username, 'flat', siteUrl, options),
-      'trophy'
-    ) + '\n\n';
+    readme += `<div align="center">\n`;
+    readme += buildTrophiesSection(user.username, 'tokyonight', 'flat', options) + '\n';
     readme += `</div>\n\n`;
     
     // Stats Grid
@@ -496,50 +583,22 @@ export class CreativeStrategy implements IReadmeStrategy {
     readme += `<div align="center">\n`;
     readme += `<table>\n<tr>\n`;
     readme += `<td>\n\n`;
-    readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'tokyonight', statsUrl, siteUrl, options),
-      buildStatsUrl(profile, 'flat', statsUrl, siteUrl, options),
-      'Stats'
-    ) + '\n\n';
+    readme += buildStatsSection(profile, 'tokyonight', 'flat', options) + '\n\n';
     readme += `</td>\n<td>\n\n`;
-    readme += getAdaptiveImage(
-      `${streakUrl}/?user=${user.username}&theme=tokyonight&hide_border=true`,
-      `${streakUrl}/?user=${user.username}&theme=flat&hide_border=true`,
-      'Streak'
-    ) + '\n\n';
+    readme += buildStreakSection(user.username, 'tokyonight', 'flat', options) + '\n\n';
     readme += `</td>\n</tr>\n</table>\n`;
     readme += `</div>\n\n`;
 
     // Projects as Cards
-    if (topRepos.length > 0) {
-      readme += `## 🌟 Featured Repositories\n\n`;
-      readme += `<div align="center">\n\n`;
-      
-      for (const repo of topRepos) {
-        // En tarjetas de proyectos mantenemos el link pero usamos img adaptativa
-        const darkCard = buildPinUrl(repo, user.username, 'tokyonight', true, statsUrl, siteUrl, options);
-        const lightCard = buildPinUrl(repo, user.username, 'flat', true, statsUrl, siteUrl, options);
-        readme += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
-      }
-      
-      readme += '\n</div>\n\n';
-    }
+    readme += `## 🌟 Featured Repositories\n\n`;
+    readme += buildFeaturedProjectsSection(profile, 'tokyonight', 'flat', 4, true, options);
     
     // Activity Snake
-    // GitHub Actions Platane/snk public URL
-    const snakeDark = `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake-dark.svg`;
-    const snakeLight = `https://raw.githubusercontent.com/${user.username}/${user.username}/output/github-contribution-grid-snake.svg`;
-
-    readme += `## 🐍 Contribution Snake\n\n`;
-    readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(snakeDark, snakeLight, 'Snake animation') + '\n\n';
-    readme += `</div>\n\n`;
-
-
+    readme += buildSnakeSection(user.username);
     
     // Connect
     readme += `## 🌐 Connect with Me\n\n`;
-    readme += `<div align="center">\n\n`;
+    readme += `<div align="center">\n`;
     readme += `[![GitHub](https://img.shields.io/badge/-GitHub-181717?style=for-the-badge&logo=github)](${user.profileUrl})\n`;
     
     if (user.socialLinks && user.socialLinks.length > 0) {
@@ -576,11 +635,8 @@ export class TerminalStrategy implements IReadmeStrategy {
   description = 'Estética de terminal estilo hacker con fuentes monoespaciadas';
   
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
-    const { user, repositories, topLanguages } = profile;
+    const { user, repositories } = profile;
     const topRepos = repositories.filter(r => !r.isForked).slice(0, 5);
-    
-    const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-    const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
     
     let readme = '';
     
@@ -612,8 +668,8 @@ export class TerminalStrategy implements IReadmeStrategy {
     // Skills
     readme += `\`\`\`bash\n`;
     readme += `$ ls -la /skills/\n`;
-    readme += `total ${topLanguages.length}\n`;
-    for (const lang of topLanguages.slice(0, 8)) {
+    readme += `total ${profile.topLanguages.length}\n`;
+    for (const lang of profile.topLanguages.slice(0, 8)) {
       const bar = '█'.repeat(Math.ceil(lang.percentage / 10)) + '░'.repeat(10 - Math.ceil(lang.percentage / 10));
       readme += `drwxr-xr-x  ${lang.language.padEnd(15)} ${bar} ${lang.percentage}%\n`;
     }
@@ -621,17 +677,9 @@ export class TerminalStrategy implements IReadmeStrategy {
     
     // Stats
     readme += `## 📊 System Metrics\n\n`;
-    readme += `<div align="center">\n\n`;
-    readme += getAdaptiveImage(
-      buildStatsUrl(profile, 'chartreuse-dark', statsUrl, siteUrl, options),
-      buildStatsUrl(profile, 'default', statsUrl, siteUrl, options),
-      'Stats'
-    ) + '\n\n';
-    readme += getAdaptiveImage(
-      buildTopLangsUrl(topLanguages, user.username, 'chartreuse-dark', 'compact', statsUrl, siteUrl, options),
-      buildTopLangsUrl(topLanguages, user.username, 'default', 'compact', statsUrl, siteUrl, options),
-      'Top Langs'
-    ) + '\n\n';
+    readme += `<div align="center">\n`;
+    readme += buildStatsSection(profile, 'chartreuse-dark', 'default', options) + '\n';
+    readme += buildTopLangsSection(profile, 'chartreuse-dark', 'default', 'compact', options) + '\n';
     readme += `</div>\n\n`;
     
     // Repositories
