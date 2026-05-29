@@ -21,21 +21,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: npm run type-check
+        run: pnpm type-check
         continue-on-error: true
 
       - name: Build static export
-        run: npm run build
+        run: pnpm build
         env:
           NEXT_PUBLIC_REPO_NAME: ${{ github.event.repository.name }}
           NODE_ENV: production
