@@ -6,7 +6,7 @@ import {
   GitHubUser,
   Repository,
   LanguageStats,
-  ReadmeTemplate,
+  Template,
   GeneratedReadme,
   LANGUAGE_COLORS,
 } from '@/lib/domain/types';
@@ -151,11 +151,27 @@ export interface ReadmeOptions {
   forceSelfHosted?: boolean;
   /** Status of external services to decide on fallbacks */
   serviceStatus?: Record<string, boolean>;
+  /** Whether to include the contribution snake animation section. Requires GitHub Action setup. Defaults to false. */
+  includeSnake?: boolean;
 }
 
 /**
  * Builds a trophies URL, using self-hosted fallback if specified or if official is down.
  */
+/**
+ * Returns true only if siteUrl is a real production deployment
+ * (not localhost, not GitHub Pages). Used to decide if self-hosted
+ * API routes can be used inside generated READMEs.
+ */
+function isProductionSiteUrl(siteUrl: string): boolean {
+  if (!siteUrl) return false;
+  if (siteUrl.includes('github.io')) return false;
+  if (siteUrl.includes('localhost')) return false;
+  if (siteUrl.includes('127.0.0.1')) return false;
+  if (siteUrl.match(/:\d+$/)) return false; // any port = local dev
+  return true;
+}
+
 function buildTrophiesUrl(
   username: string,
   theme: string,
@@ -165,72 +181,79 @@ function buildTrophiesUrl(
   const isDown = options?.serviceStatus?.['github-profile-trophy'] === false;
   const isMirrorUp = options?.serviceStatus?.['trophy-mirror'] !== false;
   const forceSelf = options?.forceSelfHosted;
+  const isProd = isProductionSiteUrl(siteUrl);
 
-  // 1. Si se fuerza el propio y tenemos siteUrl (no en GitHub Pages)
-  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
+  // 1. Force self-hosted only when deployed to a real production URL
+  if (forceSelf && isProd) {
     const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
     return `${siteUrl}/api/trophies?${p.toString()}`;
   }
 
-  // 2. Si el oficial está caído, intentamos el espejo (mirror)
-  if (isDown && isMirrorUp) {
+  // 2. Mirror is always preferred (official is 402 Payment Required)
+  if (isMirrorUp) {
     return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
   }
 
-  // 3. Si el oficial está caído y el espejo también, y tenemos siteUrl propio
-  if (isDown && !isMirrorUp && siteUrl && !siteUrl.includes('github.io')) {
+  // 3. Mirror down + production URL → use self-hosted
+  if (isDown && !isMirrorUp && isProd) {
     const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
     return `${siteUrl}/api/trophies?${p.toString()}`;
   }
 
-  // Por defecto intentamos el espejo (mirror) funcional primero, ya que el oficial suele estar en 402 Payment Required
-  return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
+  // 4. Last resort: official (may return 402 for high-traffic accounts)
+  return `https://github-profile-trophy.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
 }
 
 /**
- * Genera la sección del Snake de contribuciones
+ * Genera la sección del Snake de contribuciones.
+ * Solo se incluye si options.includeSnake === true.
+ * Incluye el workflow YAML completo como bloque de código para facilitar la configuración.
  */
 function buildSnakeSection(username: string): string {
   const snakeDark = `https://raw.githubusercontent.com/${username}/${username}/output/github-contribution-grid-snake-dark.svg`;
   const snakeLight = `https://raw.githubusercontent.com/${username}/${username}/output/github-contribution-grid-snake.svg`;
 
   let section = `## 🐍 Contribution Snake\n\n`;
+  section += `> [!NOTE]\n`;
+  section += `> Para que la animación aparezca debes configurar el GitHub Action de abajo una sola vez.\n\n`;
   section += `<div align="center">\n`;
   section += getAdaptiveImage(snakeDark, snakeLight, 'Snake animation') + '\n';
   section += `</div>\n\n`;
-  
-  section += `<!--\n`;
-  section += `💡 TIP: Para que el Snake funcione, debes configurar un GitHub Action que lo genere.\n`;
-  section += `Crea un archivo en .github/workflows/snake.yml con el siguiente contenido:\n\n`;
-  section += `name: generate animation\n\n`;
+
+  // Provide the full workflow as a fenced code block (visible, copyable)
+  section += `<details>\n<summary>⚙️ Configurar GitHub Action (clic para expandir)</summary>\n\n`;
+  section += `Crea el archivo \`.github/workflows/snake.yml\` en tu repo con este contenido:\n\n`;
+  section += `\`\`\`yaml\n`;
+  section += `name: Generate Snake Animation\n\n`;
   section += `on:\n`;
   section += `  schedule:\n`;
-  section += `    - cron: "0 */24 * * *"\n`;
+  section += `    - cron: "0 0 * * *"\n`;
   section += `  workflow_dispatch:\n`;
   section += `  push:\n`;
   section += `    branches:\n`;
-  section += `    - main\n\n`;
+  section += `      - main\n\n`;
   section += `jobs:\n`;
   section += `  generate:\n`;
   section += `    runs-on: ubuntu-latest\n`;
-  section += `    timeout-minutes: 5\n\n`;
+  section += `    timeout-minutes: 5\n`;
   section += `    steps:\n`;
-  section += `      - name: generate github-contribution-grid-snake.svg\n`;
+  section += `      - name: Generate snake SVG\n`;
   section += `        uses: Platane/snk/svg-only@v3\n`;
   section += `        with:\n`;
   section += `          github_user_name: \${{ github.repository_owner }}\n`;
   section += `          outputs: |\n`;
   section += `            dist/github-contribution-grid-snake.svg\n`;
-  section += `            dist/github-contribution-grid-snake-dark.svg?palette=github-dark\n\n`;
-  section += `      - name: push github-contribution-grid-snake.svg to the output branch\n`;
+  section += `            dist/github-contribution-grid-snake-dark.svg?palette=github-dark\n`;
+  section += `      - name: Push to output branch\n`;
   section += `        uses: crazy-max/ghaction-github-pages@v3.1.0\n`;
   section += `        with:\n`;
   section += `          target_branch: output\n`;
   section += `          build_dir: dist\n`;
   section += `        env:\n`;
   section += `          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\n`;
-  section += `-->\n\n`;
-  
+  section += `\`\`\`\n\n`;
+  section += `</details>\n\n`;
+
   return section;
 }
 
@@ -457,8 +480,10 @@ export class PortfolioStrategy implements IReadmeStrategy {
     readme += `## 🚀 Featured Projects\n\n`;
     readme += buildFeaturedProjectsSection(profile, 'tokyonight', 'flat', 4, false, options);
     
-    // Activity Snake
-    readme += buildSnakeSection(user.username);
+    // Activity Snake (only if user has set up the GitHub Action)
+    if (options?.includeSnake) {
+      readme += buildSnakeSection(user.username);
+    }
     
     // Activity Graph
     readme += `## 📈 Contribution Graph\n\n`;
@@ -594,7 +619,10 @@ export class CreativeStrategy implements IReadmeStrategy {
     readme += buildFeaturedProjectsSection(profile, 'tokyonight', 'flat', 4, true, options);
     
     // Activity Snake
-    readme += buildSnakeSection(user.username);
+    // Activity Snake (only if user has set up the GitHub Action)
+    if (options?.includeSnake) {
+      readme += buildSnakeSection(user.username);
+    }
     
     // Connect
     readme += `## 🌐 Connect with Me\n\n`;
@@ -733,7 +761,7 @@ export class ReadmeBuilder {
     this.strategies.set(strategy.id, strategy);
   }
   
-  getAvailableTemplates(): ReadmeTemplate[] {
+  getAvailableTemplates(): Template[] {
     return Array.from(this.strategies.values()).map(s => ({
       id: s.id,
       name: s.name,

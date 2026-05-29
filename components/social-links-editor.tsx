@@ -17,16 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-
-// Tipos de redes sociales soportadas
-export interface SocialLink {
-  platform: string;
-  url: string;
-  username: string;
-  icon: string;
-  color: string;
-  enabled: boolean;
-}
+import { type SocialLink } from '@/lib/domain/types';
 
 // Plataformas predefinidas
 const SOCIAL_PLATFORMS = [

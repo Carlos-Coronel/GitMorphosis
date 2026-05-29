@@ -79,11 +79,11 @@ export interface ContributionStats {
   contributionsByDay: Record<string, number>;
 }
 
-export interface ReadmeTemplate {
+export interface Template {
   id: string;
   name: string;
   description: string;
-  preview: string;
+  preview?: string;
 }
 
 export interface GeneratedReadme {
@@ -186,3 +186,56 @@ export const TECH_PATTERNS: Record<string, string[]> = {
   Prisma: ['prisma/schema.prisma'],
   Tailwind: ['tailwind.config'],
 };
+
+export interface ProfileData {
+  user: {
+    username: string;
+    name: string | null;
+    bio: string | null;
+    avatarUrl: string | null;
+    location: string | null;
+    company: string | null;
+    blog: string | null;
+    twitterUsername?: string | null;
+    socialLinks?: {
+      platform: string;
+      url: string;
+      username: string;
+    }[];
+    followers: number;
+    following: number;
+    publicRepos: number;
+  };
+  topLanguages: {
+    language: string;
+    percentage: number;
+    color: string;
+  }[];
+  repositoryCount: number;
+  pinnedCount: number;
+}
+
+export interface GenerateResult {
+  markdown: string;
+  templateId: string;
+  generatedAt: string;
+  profile: ProfileData;
+}
+
+export interface SocialLink {
+  platform: string;
+  url: string;
+  username: string;
+  icon: string;
+  color: string;
+  enabled: boolean;
+}
+
+export interface GeneratorConfig {
+  statsUrl: string;
+  streakUrl: string;
+  forceSelfHosted: boolean;
+  includeSnake: boolean;
+  socialLinks: SocialLink[];
+}
+

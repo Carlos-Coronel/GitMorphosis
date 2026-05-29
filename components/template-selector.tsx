@@ -1,13 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { type Template } from '@/lib/domain/types';
 import { Palette, Code2, Sparkles, Terminal, CheckCircle2 } from 'lucide-react';
-
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-}
 
 const TEMPLATE_CONFIG: Record<string, { 
   icon: React.ElementType; 

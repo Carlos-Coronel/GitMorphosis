@@ -20,11 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { GitHubProfile } from '@/lib/domain/types';
-import { statsDataUri } from '@/lib/client/svg/stats-card';
-import { topLangsDataUri } from '@/lib/client/svg/top-langs-card';
-import { pinDataUri } from '@/lib/client/svg/pin-card';
-import { snakeDataUri } from '@/lib/client/svg/snake-card';
-import { trophyDataUri } from '@/lib/client/svg/trophy-card';
+import { statsDataUri } from '@/lib/infrastructure/svg/stats-card';
+import { topLangsDataUri } from '@/lib/infrastructure/svg/top-langs-card';
+import { pinDataUri } from '@/lib/infrastructure/svg/pin-card';
+import { snakeDataUri } from '@/lib/infrastructure/svg/snake-card';
+import { trophyDataUri } from '@/lib/infrastructure/svg/trophy-card';
 
 interface ReadmePreviewProps {
   markdown: string;
@@ -152,7 +152,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       const isStats = url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?') || url.includes('github-readme-stats-sigma-five.vercel.app/api?');
       const isLangs = url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs') || url.includes('github-readme-stats-sigma-five.vercel.app/api/top-langs');
       const isTrophy = url.includes('github-profile-trophy.vercel.app') || url.includes('github-profile-trophy-one.vercel.app') || url.includes('/api/trophies');
-      const isSnake = url.includes('/api/snake') || url.includes('github-contribution-grid-snake');
+      const isSnake = url.includes('/api/snake') || url.includes('github-contribution-grid-snake') || url.includes('snake.svg');
       const isPin = url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin') || url.includes('github-readme-stats-sigma-five.vercel.app/api/pin');
 
       if (isStats) {
@@ -247,20 +247,31 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
     }
 
     // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
-    let processed = md.replace(
-      /<picture>\s*<source[^>]*media="[^"]*dark[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<source[^>]*media="[^"]*light[^"]*"[^>]*srcset="([^"]+)"[^>]*>\s*<img[^>]*alt="([^"]*)"[^>]*(?:height="([^"]*)")?[^>]*\/>\s*<\/picture>/gi,
-      (_match, darkSrc, lightSrc, alt, height) => {
-        const rawSrc = isDark ? darkSrc : lightSrc;
-        const src = resolveUrl(rawSrc);
-        const isCard = src.startsWith('data:') || rawSrc.includes('/api/')
-          || rawSrc.includes('github-readme-stats') || rawSrc.includes('github-readme-stats-sigma-five')
-          || rawSrc.includes('github-profile-trophy') || rawSrc.includes('streak-stats')
-          || rawSrc.includes('capsule-render') || rawSrc.includes('readme-typing-svg');
-        const heightAttr = height ? ` height="${height}"` : '';
-        const classAttr = isCard ? ' class="stats-card"' : '';
-        return `<img src="${src}" alt="${alt || ''}"${heightAttr}${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
-      }
-    );
+    let processed = md.replace(/<picture>([\s\S]*?)<\/picture>/gi, (match) => {
+      const darkMatch = match.match(/<source[^>]*media="[^"]*dark[^"]*"[^>]*srcset="([^"]+)"/i);
+      const lightMatch = match.match(/<source[^>]*media="[^"]*light[^"]*"[^>]*srcset="([^"]+)"/i);
+      const imgMatch = match.match(/<img[^>]*src="([^"]+)"/i);
+      const altMatch = match.match(/alt="([^"]*)"/i);
+      const heightMatch = match.match(/height="([^"]*)"/i);
+
+      const darkSrc = darkMatch ? darkMatch[1] : (imgMatch ? imgMatch[1] : '');
+      const lightSrc = lightMatch ? lightMatch[1] : (imgMatch ? imgMatch[1] : '');
+      const alt = altMatch ? altMatch[1] : '';
+      const height = heightMatch ? heightMatch[1] : '';
+
+      const rawSrc = isDark ? darkSrc : lightSrc;
+      const src = resolveUrl(rawSrc);
+      
+      const isCard = src.startsWith('data:') || rawSrc.includes('/api/')
+        || rawSrc.includes('github-readme-stats') || rawSrc.includes('github-readme-stats-sigma-five')
+        || rawSrc.includes('github-profile-trophy') || rawSrc.includes('streak-stats')
+        || rawSrc.includes('capsule-render') || rawSrc.includes('readme-typing-svg');
+        
+      const heightAttr = height ? ` height="${height}"` : '';
+      const classAttr = isCard ? ' class="stats-card"' : '';
+      
+      return `<img src="${src}" alt="${alt}"${heightAttr}${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
+    });
 
     // ── 2. Block processing ────────────────────────────────────────────────
     const blocks = processed.trim().split(/\n\n+/);
@@ -300,6 +311,21 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
         }).join('');
         return `<table>${rows}</table>`;
       }
+
+      // ── Handle HTML blocks (div, p align) often used for centering
+      if (block.trim().startsWith('<div') || block.trim().startsWith('<p align')) {
+        const content = block.replace(/<(img|source)[^>]+>/gi, (tag) => {
+          if (tag.toLowerCase().startsWith('<img')) {
+            return tag.replace(/src="([^"]+)"/i, (_m, src) => `src="${resolveUrl(src)}"`);
+          }
+          if (tag.toLowerCase().startsWith('<source')) {
+            return tag.replace(/srcset="([^"]+)"/i, (_m, src) => `srcset="${resolveUrl(src)}"`);
+          }
+          return tag;
+        });
+        return `<div class="flex flex-col items-center justify-center gap-2 my-4 text-center">${inline(content)}</div>`;
+      }
+
       return `<p>${inline(block).replace(/\n/g, '<br />')}</p>`;
     });
 
