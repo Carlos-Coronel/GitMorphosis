@@ -1,3 +1,3 @@
 :HL["/GitMorphosis/_next/static/chunks/070b1-u6zrb1d.css","style"]
-:HL["/GitMorphosis/_next/static/chunks/0.6ymuxiv53qn.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"kt5VzTfdl8qY3-HmH8ogv"}
+:HL["/GitMorphosis/_next/static/chunks/0~3hzw_43pg9w.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"SPoQPiHUjk8ESSCyRfHDi"}
