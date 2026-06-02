@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'GitHub Profile Generator | Auto-generate stunning README profiles',
-  description: 'Generate professional GitHub README profiles automatically using web scraping. No API key required. Multiple templates available.',
+  description: 'Generate professional GitHub README profiles automatically using the official GitHub API. No API key required. Multiple templates available.',
   keywords: ['GitHub', 'README', 'profile', 'generator', 'developer', 'portfolio'],
   authors: [{ name: 'GitHub Profile Generator' }],
   openGraph: {

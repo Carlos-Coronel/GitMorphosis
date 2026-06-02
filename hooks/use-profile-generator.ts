@@ -23,17 +23,11 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
   const currentUsernameRef = useRef<string | null>(null);
 
   const [config, setConfig] = useState<GeneratorConfig>({
-    statsUrl: '',
-    streakUrl: 'https://streak-stats.demolab.com',
-    forceSelfHosted: false,
     includeSnake: false,
     socialLinks: [],
   });
 
   const configRef = useRef<GeneratorConfig>({
-    statsUrl: '',
-    streakUrl: 'https://streak-stats.demolab.com',
-    forceSelfHosted: false,
     includeSnake: false,
     socialLinks: [],
   });
@@ -97,7 +91,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
       // ── Step 3: Generate README ─────────────────────────────────────────
       setLoadingStep('Generando README...');
       const builder = createReadmeBuilder();
-      const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
       const serviceStatus: Record<string, boolean> = {};
       serviceHealth.forEach((s) => {
@@ -105,10 +98,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
       });
 
       const generatedResult = builder.build(profile, selectedTemplateRef.current, {
-        statsUrl: currentConfig.statsUrl || undefined,
-        streakUrl: currentConfig.streakUrl,
-        siteUrl,
-        forceSelfHosted: currentConfig.forceSelfHosted && !isGitHubPages,
         serviceStatus,
         includeSnake: currentConfig.includeSnake,
       });
@@ -142,20 +131,16 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
       configRef.current = updated;
 
       if (currentUsernameRef.current) {
-        const isUrlOrSocialChanged =
-          newConfig.socialLinks !== undefined ||
-          newConfig.statsUrl !== undefined ||
-          newConfig.streakUrl !== undefined;
+        const isSocialChanged = newConfig.socialLinks !== undefined;
 
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
 
-        if (isUrlOrSocialChanged) {
-          const debounceTime = newConfig.socialLinks !== undefined ? 800 : 1000;
+        if (isSocialChanged) {
           debounceTimerRef.current = setTimeout(() => {
             handleGenerate(currentUsernameRef.current!, updated);
-          }, debounceTime);
+          }, 800);
         } else {
           handleGenerate(currentUsernameRef.current!, updated);
         }

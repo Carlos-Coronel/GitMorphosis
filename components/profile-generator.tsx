@@ -74,7 +74,6 @@ export function ProfileGenerator() {
           <AdvancedSettings
             result={result}
             config={config}
-            isGitHubPages={isGitHubPages}
             onTokenChange={handleTokenChange}
             updateConfig={updateConfig}
           />

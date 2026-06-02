@@ -37,32 +37,14 @@ function getAdaptiveImage(darkUrl: string, lightUrl: string, alt: string, height
 }
 
 /**
- * Builds a self-hosted /api/stats URL with profile data embedded in query params.
- * Falls back to a custom statsUrl server if provided.
+ * Builds a stats URL pointing to public github-readme-stats instance.
  */
 function buildStatsUrl(
   profile: { user: { username: string; followers: number; publicRepos: number }; repositories: { stars: number }[] },
   theme: string,
-  statsUrl: string,
-  siteUrl: string,
   options?: ReadmeOptions
 ): string {
   const username = profile.user.username;
-  const forceSelf = options?.forceSelfHosted;
-
-  // Custom stats server override (e.g. self-hosted github-readme-stats)
-  if (statsUrl) {
-    const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
-    return `${statsUrl}/api?${p.toString()}`;
-  }
-  
-  // Self-hosted API route
-  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
-    const p = new URLSearchParams({ username, theme, show_icons: 'true', hide_border: 'true' });
-    return `${siteUrl}/api/stats?${p.toString()}`;
-  }
-
-  // Default: public github-readme-stats (works everywhere, no server needed)
   const p = new URLSearchParams({
     username,
     theme,
@@ -74,30 +56,15 @@ function buildStatsUrl(
 }
 
 /**
- * Builds a self-hosted /api/top-langs URL with language data embedded.
+ * Builds a top-langs URL with language data embedded.
  */
 function buildTopLangsUrl(
   langs: { language: string; percentage: number; color: string }[],
   username: string,
   theme: string,
   layout: string,
-  statsUrl: string,
-  siteUrl: string,
   options?: ReadmeOptions
 ): string {
-  const forceSelf = options?.forceSelfHosted;
-
-  if (statsUrl) {
-    const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
-    return `${statsUrl}/api/top-langs/?${p.toString()}`;
-  }
-
-  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
-    const p = new URLSearchParams({ username, theme, layout, hide_border: 'true' });
-    return `${siteUrl}/api/top-langs?${p.toString()}`;
-  }
-
-  // Default: public github-readme-stats top-langs
   const p = new URLSearchParams({
     username, theme, layout, hide_border: 'true',
     langs_count: '8',
@@ -106,30 +73,15 @@ function buildTopLangsUrl(
 }
 
 /**
- * Builds a self-hosted /api/pin URL with repo data embedded.
+ * Builds a pin URL with repo data embedded.
  */
 function buildPinUrl(
   repo: { name: string; description: string | null; language: string | null; stars: number; forks: number; url: string },
   username: string,
   theme: string,
   showOwner: boolean,
-  statsUrl: string,
-  siteUrl: string,
   options?: ReadmeOptions
 ): string {
-  const forceSelf = options?.forceSelfHosted;
-
-  if (statsUrl) {
-    const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
-    return `${statsUrl}/api/pin/?${p.toString()}`;
-  }
-
-  if (forceSelf && siteUrl && !siteUrl.includes('github.io')) {
-    const p = new URLSearchParams({ username, repo: repo.name, theme, hide_border: 'true', show_owner: String(showOwner) });
-    return `${siteUrl}/api/pin?${p.toString()}`;
-  }
-
-  // Default: public github-readme-stats pin
   const p = new URLSearchParams({
     username,
     repo: repo.name,
@@ -141,14 +93,6 @@ function buildPinUrl(
 }
 
 export interface ReadmeOptions {
-  /** Override base URL for github-readme-stats-compatible server (e.g. self-hosted). Leave blank to use the built-in /api/stats routes. */
-  statsUrl?: string;
-  /** Override base URL for streak-stats server. Defaults to streak-stats.demolab.com */
-  streakUrl?: string;
-  /** The origin used to build absolute self-hosted SVG URLs (e.g. https://yourdomain.com). Required when generating README for deployment. */
-  siteUrl?: string;
-  /** Force using self-hosted API routes for all SVG cards */
-  forceSelfHosted?: boolean;
   /** Status of external services to decide on fallbacks */
   serviceStatus?: Record<string, boolean>;
   /** Whether to include the contribution snake animation section. Requires GitHub Action setup. Defaults to false. */
@@ -156,51 +100,21 @@ export interface ReadmeOptions {
 }
 
 /**
- * Builds a trophies URL, using self-hosted fallback if specified or if official is down.
+ * Builds a trophies URL, using mirror fallback if official is down.
  */
-/**
- * Returns true only if siteUrl is a real production deployment
- * (not localhost, not GitHub Pages). Used to decide if self-hosted
- * API routes can be used inside generated READMEs.
- */
-function isProductionSiteUrl(siteUrl: string): boolean {
-  if (!siteUrl) return false;
-  if (siteUrl.includes('github.io')) return false;
-  if (siteUrl.includes('localhost')) return false;
-  if (siteUrl.includes('127.0.0.1')) return false;
-  if (siteUrl.match(/:\d+$/)) return false; // any port = local dev
-  return true;
-}
-
 function buildTrophiesUrl(
   username: string,
   theme: string,
-  siteUrl: string,
   options?: ReadmeOptions
 ): string {
-  const isDown = options?.serviceStatus?.['github-profile-trophy'] === false;
   const isMirrorUp = options?.serviceStatus?.['trophy-mirror'] !== false;
-  const forceSelf = options?.forceSelfHosted;
-  const isProd = isProductionSiteUrl(siteUrl);
 
-  // 1. Force self-hosted only when deployed to a real production URL
-  if (forceSelf && isProd) {
-    const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
-    return `${siteUrl}/api/trophies?${p.toString()}`;
-  }
-
-  // 2. Mirror is always preferred (official is 402 Payment Required)
+  // Mirror is always preferred (official is 402 Payment Required)
   if (isMirrorUp) {
     return `https://github-profile-trophy-one.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
   }
 
-  // 3. Mirror down + production URL → use self-hosted
-  if (isDown && !isMirrorUp && isProd) {
-    const p = new URLSearchParams({ username, theme, 'no-frame': 'true', row: '1', column: '7' });
-    return `${siteUrl}/api/trophies?${p.toString()}`;
-  }
-
-  // 4. Last resort: official (may return 402 for high-traffic accounts)
+  // Last resort: official (may return 402 for high-traffic accounts)
   return `https://github-profile-trophy.vercel.app/?username=${username}&theme=${theme}&no-frame=true&row=1&column=7`;
 }
 
@@ -261,12 +175,9 @@ function buildSnakeSection(username: string): string {
  * Genera la sección de estadísticas de GitHub
  */
 function buildStatsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
-  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
-  
   return getAdaptiveImage(
-    buildStatsUrl(profile, darkTheme, statsUrl, siteUrl, options),
-    buildStatsUrl(profile, lightTheme, statsUrl, siteUrl, options),
+    buildStatsUrl(profile, darkTheme, options),
+    buildStatsUrl(profile, lightTheme, options),
     `${profile.user.username}'s GitHub stats`
   );
 }
@@ -275,14 +186,11 @@ function buildStatsSection(profile: GitHubProfile, darkTheme: string, lightTheme
  * Genera la sección de lenguajes más usados
  */
 function buildTopLangsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, layout: string = 'compact', options?: ReadmeOptions): string {
-  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
-  
   if (profile.topLanguages.length === 0) return '';
   
   return getAdaptiveImage(
-    buildTopLangsUrl(profile.topLanguages, profile.user.username, darkTheme, layout, statsUrl, siteUrl, options),
-    buildTopLangsUrl(profile.topLanguages, profile.user.username, lightTheme, layout, statsUrl, siteUrl, options),
+    buildTopLangsUrl(profile.topLanguages, profile.user.username, darkTheme, layout, options),
+    buildTopLangsUrl(profile.topLanguages, profile.user.username, lightTheme, layout, options),
     'Top Languages'
   );
 }
@@ -291,11 +199,9 @@ function buildTopLangsSection(profile: GitHubProfile, darkTheme: string, lightTh
  * Genera la sección de trofeos
  */
 function buildTrophiesSection(username: string, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
-  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
-  
   return getAdaptiveImage(
-    buildTrophiesUrl(username, darkTheme, siteUrl, options),
-    buildTrophiesUrl(username, lightTheme, siteUrl, options),
+    buildTrophiesUrl(username, darkTheme, options),
+    buildTrophiesUrl(username, lightTheme, options),
     'GitHub Trophies'
   );
 }
@@ -304,11 +210,9 @@ function buildTrophiesSection(username: string, darkTheme: string, lightTheme: s
  * Genera la sección de racha (streak)
  */
 function buildStreakSection(username: string, darkTheme: string, lightTheme: string, options?: ReadmeOptions): string {
-  const streakUrl = options?.streakUrl?.trim().replace(/\/+$/, '') || 'https://streak-stats.demolab.com';
-  
   return getAdaptiveImage(
-    `${streakUrl}/?user=${username}&theme=${darkTheme}&hide_border=true`,
-    `${streakUrl}/?user=${username}&theme=${lightTheme}&hide_border=true`,
+    `https://streak-stats.demolab.com/?user=${username}&theme=${darkTheme}&hide_border=true`,
+    `https://streak-stats.demolab.com/?user=${username}&theme=${lightTheme}&hide_border=true`,
     'GitHub Streak'
   );
 }
@@ -330,15 +234,13 @@ function buildActivityGraphSection(username: string, darkTheme: string = 'tokyo-
 function buildFeaturedProjectsSection(profile: GitHubProfile, darkTheme: string, lightTheme: string, limit: number = 4, showOwner: boolean = false, options?: ReadmeOptions): string {
   const { user, repositories, pinnedRepos } = profile;
   const featuredRepos = pinnedRepos.length > 0 ? pinnedRepos : repositories.filter(r => !r.isForked).slice(0, 6);
-  const statsUrl = options?.statsUrl?.trim().replace(/\/+$/, '') || '';
-  const siteUrl = options?.siteUrl?.trim().replace(/\/+$/, '') || '';
   
   if (featuredRepos.length === 0) return '';
   
   let section = `<div align="center">\n`;
   for (const repo of featuredRepos.slice(0, limit)) {
-    const darkCard = buildPinUrl(repo, user.username, darkTheme, showOwner, statsUrl, siteUrl, options);
-    const lightCard = buildPinUrl(repo, user.username, lightTheme, showOwner, statsUrl, siteUrl, options);
+    const darkCard = buildPinUrl(repo, user.username, darkTheme, showOwner, options);
+    const lightCard = buildPinUrl(repo, user.username, lightTheme, showOwner, options);
     section += `[${getAdaptiveImage(darkCard, lightCard, repo.name)}](${repo.url})\n`;
   }
   section += `</div>\n\n`;

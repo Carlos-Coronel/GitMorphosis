@@ -232,9 +232,6 @@ export interface SocialLink {
 }
 
 export interface GeneratorConfig {
-  statsUrl: string;
-  streakUrl: string;
-  forceSelfHosted: boolean;
   includeSnake: boolean;
   socialLinks: SocialLink[];
 }
