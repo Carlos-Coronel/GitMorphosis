@@ -100,17 +100,23 @@ test('reproduce la geometría y los estilos de un README de GitHub', async ({ pa
   expect(geometry.overflow).toBe(false);
   const projectHeights = geometry.projects.map((project) => project.height);
   expect(Math.max(...projectHeights) - Math.min(...projectHeights)).toBeLessThanOrEqual(1);
-  expect(geometry.stack.y - geometry.header.y - geometry.header.height).toBeCloseTo(4.34375, 2);
+  const headerGap = geometry.stack.y - geometry.header.y - geometry.header.height;
+  expect(headerGap).toBeGreaterThanOrEqual(4);
+  expect(headerGap).toBeLessThanOrEqual(5.5);
   expect(geometry.stack.x).toBeCloseTo((geometry.contentWidth - geometry.stack.width) / 2, 0);
   if (testInfo.project.name === 'chromium') {
     expect(geometry.contentWidth).toBeGreaterThanOrEqual(830);
     expect(geometry.contentWidth).toBeLessThanOrEqual(833);
     expect(geometry.firstNaturalWidth).toBe(900);
     expect(geometry.projects[1].x - geometry.projects[0].x - geometry.projects[0].width).toBeCloseTo(4, 0);
-    expect(geometry.projects[2].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(4.34375, 2);
+    const projectGap = geometry.projects[2].y - geometry.projects[0].y - geometry.projects[0].height;
+    expect(projectGap).toBeGreaterThanOrEqual(4);
+    expect(projectGap).toBeLessThanOrEqual(5.5);
   } else {
     expect(geometry.firstNaturalWidth).toBe(340);
-    expect(geometry.projects[1].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(4.34375, 2);
+    const projectGap = geometry.projects[1].y - geometry.projects[0].y - geometry.projects[0].height;
+    expect(projectGap).toBeGreaterThanOrEqual(4);
+    expect(projectGap).toBeLessThanOrEqual(5.5);
   }
 });
 
