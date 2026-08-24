@@ -41,6 +41,19 @@ function resolveAssetAttributes(html: string, assets: GeneratedAsset[]): string 
   );
 }
 
+function wrapThemedPictures(html: string): string {
+  return html
+    .replaceAll('<picture>', '<themed-picture data-catalyst-inline="true"><picture>')
+    .replaceAll('</picture>', '</picture></themed-picture>\n');
+}
+
+function wrapPlainTextCodeBlocks(html: string): string {
+  return html.replace(
+    /<pre><code class="language-text">[\s\S]*?<\/code><\/pre>/g,
+    (block) => `<div class="github-plain-code">${block}</div>`,
+  );
+}
+
 /**
  * Renders the generated Markdown with GFM semantics, while choosing the same
  * responsive SVG variant that GitHub would select for the requested theme.
@@ -52,5 +65,5 @@ export function renderReadmePreview(
 ): string {
   const adaptiveMarkdown = selectAdaptivePictures(markdown, theme);
   const html = marked.parse(adaptiveMarkdown, { async: false, gfm: true, breaks: false });
-  return resolveAssetAttributes(html, assets);
+  return wrapThemedPictures(wrapPlainTextCodeBlocks(resolveAssetAttributes(html, assets)));
 }
