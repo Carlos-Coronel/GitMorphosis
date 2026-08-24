@@ -88,7 +88,7 @@ class CreativeStrategy implements IReadmeStrategy {
   id = 'creative'; name = 'Creativa'; description = 'Diseño visual con recursos SVG locales';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n  location: ${JSON.stringify(user.location || 'Earth')},\n  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${adaptive('trophies', 'GitHub trophies')}\n\n## 📊 GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n${contributionCards(profile)}## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${adaptive('footer', 'Footer')}\n`;
+    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n  location: ${JSON.stringify(user.location)},\n  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${adaptive('trophies', 'GitHub trophies')}\n\n## 📊 GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n${contributionCards(profile)}## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${adaptive('footer', 'Footer')}\n`;
   }
 }
 
@@ -97,7 +97,7 @@ class TerminalStrategy implements IReadmeStrategy {
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
     const skills = profile.topLanguages.slice(0, 8).map((language) => `${language.language.padEnd(15)} ${'█'.repeat(Math.min(10, Math.ceil(language.percentage / 10))).padEnd(10, '░')} ${language.percentage}%`).join('\n');
-    return `\`\`\`text\n$ whoami\n${text(user.name || user.username)}\n\n$ cat profile.txt\n${text(user.bio || 'Developer')}\nLocation: ${text(user.location || 'Unknown')}\nPublic repos: ${user.publicRepos}\nFollowers: ${user.followers}\n\n$ ls skills/\n${skills}\n\`\`\`\n\n## System metrics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n## Repositories\n\n${projects(profile)}${snake(options)}\n\n\`\`\`text\n$ echo "Thanks for visiting!"\n\`\`\`\n\n## Links\n\n${links(profile)}\n`;
+    return `\`\`\`text\n$ whoami\n${text(user.name || user.username)}\n\n$ cat profile.txt\n${text(user.bio || 'Developer')}\n${user.location ? `Location: ${text(user.location)}\n` : ''}Public repos: ${user.publicRepos}\nFollowers: ${user.followers}\n\n$ ls skills/\n${skills}\n\`\`\`\n\n## System metrics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n## Repositories\n\n${projects(profile)}${snake(options)}\n\n\`\`\`text\n$ echo "Thanks for visiting!"\n\`\`\`\n\n## Links\n\n${links(profile)}\n`;
   }
 }
 

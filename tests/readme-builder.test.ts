@@ -60,6 +60,9 @@ describe('motor autocontenido', () => {
     expect(portfolio.markdown).not.toContain('Contribution streak');
     expect(portfolio.markdown).not.toContain('Contribution activity');
     expect(creative.markdown).not.toContain('Contribution streak');
+    expect(creative.markdown).toContain('location: null');
+    expect(creative.markdown).not.toContain('location: "Earth"');
+    expect(createReadmeBuilder().build(sparse, 'terminal').markdown).not.toContain('Location: Unknown');
     expect([...portfolio.assets, ...creative.assets].some((asset) => asset.path.includes('streak-'))).toBe(false);
   });
 });
