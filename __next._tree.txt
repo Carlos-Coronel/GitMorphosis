@@ -1,2 +1,2 @@
-:HL["/GitMorphosis/_next/static/chunks/3cjxo78vkh34l.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"vupK3gB66Xgx2fYdvfm70"}
+:HL["/GitMorphosis/_next/static/chunks/2bgintwz0idac.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"h7W_O2J0p5QYUA95XCRgs"}
