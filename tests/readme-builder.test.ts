@@ -37,4 +37,29 @@ describe('motor autocontenido', () => {
     expect(result.markdown).not.toContain('javascript:');
     expect(result.markdown).toContain('[Website](#)');
   });
+
+  it('envuelve las tarjetas de proyecto con HTML compatible con GitHub', () => {
+    const result = createReadmeBuilder().build(profileFixture, 'portfolio');
+    expect(result.markdown).toContain('<a href="https://github.com/octocat/hello-world">');
+    expect(result.markdown).not.toContain('[<picture>');
+  });
+
+  it('omite secciones vacías y actividad desconocida', () => {
+    const sparse = structuredClone(profileFixture);
+    sparse.user.bio = null;
+    sparse.user.location = null;
+    sparse.user.company = null;
+    sparse.user.blog = null;
+    sparse.contributionStats = { totalContributions: 0, currentStreak: 0, longestStreak: 0, contributionsByDay: {} };
+
+    const minimalist = createReadmeBuilder().build(sparse, 'minimalist');
+    const portfolio = createReadmeBuilder().build(sparse, 'portfolio');
+    const creative = createReadmeBuilder().build(sparse, 'creative');
+
+    expect(minimalist.markdown).not.toContain('## About me');
+    expect(portfolio.markdown).not.toContain('Contribution streak');
+    expect(portfolio.markdown).not.toContain('Contribution activity');
+    expect(creative.markdown).not.toContain('Contribution streak');
+    expect([...portfolio.assets, ...creative.assets].some((asset) => asset.path.includes('streak-'))).toBe(false);
+  });
 });

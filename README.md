@@ -50,6 +50,8 @@ La única comunicación de red realizada por el producto es con `https://api.git
 
 El token es opcional. Sin token, GitMorphosis funciona con el límite público de la API y usa los repositorios más populares como alternativa a los fijados. Con token puede consultar los repositorios fijados reales y datos GraphQL adicionales.
 
+Las tarjetas siempre distinguen entre datos conocidos y datos no disponibles: sin contribuciones GraphQL se omiten la racha y la actividad, en lugar de presentar ceros engañosos. Las estadísticas generales solo muestran valores verificables mediante la API pública.
+
 - El token se conserva exclusivamente en `sessionStorage` y desaparece al cerrar la pestaña.
 - Solo se envía a `api.github.com`; nunca se incluye en el ZIP ni en el Markdown.
 - Para perfiles públicos utiliza un token de permisos mínimos y no habilites acceso de escritura.

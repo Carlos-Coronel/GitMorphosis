@@ -81,11 +81,11 @@ export function createLocalAssets(profileInput: GitHubProfile, markdown: string,
   const forks = profile.repositories.reduce((sum, repo) => sum + repo.forks, 0);
   const metrics = {
     stars,
-    commits: contributionStats.totalContributions,
-    prs: 0,
-    issues: 0,
+    forks,
     followers: user.followers,
     repos: user.publicRepos,
+    languages: profile.topLanguages.length,
+    featured: featured.length,
   };
   const assets: GeneratedAsset[] = [];
   const add = (path: `assets/${string}`, generate: () => string) => {

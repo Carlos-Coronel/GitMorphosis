@@ -35,11 +35,11 @@ export interface StatsCardParams {
   username: string;
   theme?: string;
   stars?: number;
-  commits?: number;
-  prs?: number;
-  issues?: number;
+  forks?: number;
   followers?: number;
   repos?: number;
+  languages?: number;
+  featured?: number;
   hideBorder?: boolean;
   showIcons?: boolean;
 }
@@ -59,8 +59,8 @@ function svgIcon(name: 'star' | 'commit' | 'pr' | 'issue' | 'fork', x: number, y
 
 export function generateStatsCardSvg(params: StatsCardParams): string {
   const {
-    username, theme = 'tokyonight', stars = 0, commits = 0,
-    prs = 0, issues = 0, followers = 0, repos = 0,
+    username, theme = 'tokyonight', stars = 0, forks = 0,
+    followers = 0, repos = 0, languages = 0, featured = 0,
     hideBorder = false, showIcons = true,
   } = params;
 
@@ -69,11 +69,11 @@ export function generateStatsCardSvg(params: StatsCardParams): string {
 
   const stats = [
     { label: 'Total Stars',    value: stars,     icon: 'star'   as const },
-    { label: 'Total Commits',  value: commits,   icon: 'commit' as const },
-    { label: 'Total PRs',      value: prs,        icon: 'pr'     as const },
-    { label: 'Total Issues',   value: issues,     icon: 'issue'  as const },
+    { label: 'Total Forks',    value: forks,      icon: 'fork'   as const },
     { label: 'Followers',      value: followers,  icon: 'fork'   as const },
     { label: 'Public Repos',   value: repos,      icon: 'fork'   as const },
+    { label: 'Languages',      value: languages,  icon: 'commit' as const },
+    { label: 'Featured',       value: featured,   icon: 'star'   as const },
   ];
 
   const rows = stats.map((s, i) => {

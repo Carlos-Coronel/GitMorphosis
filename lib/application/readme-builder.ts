@@ -38,8 +38,25 @@ function links(profile: GitHubProfile): string {
 function projects(profile: GitHubProfile, cards = false): string {
   const repos = (profile.pinnedRepos.length ? profile.pinnedRepos : profile.repositories.filter((repo) => !repo.isForked)).slice(0, 4);
   if (!repos.length) return '';
-  if (cards) return repos.map((repo, index) => `[${adaptive(`project-${index + 1}`, repo.name)}](${safeUrl(repo.url)})`).join('\n\n');
+  if (cards) return repos.map((repo, index) => `<a href="${attribute(safeUrl(repo.url))}">\n${adaptive(`project-${index + 1}`, repo.name)}\n</a>`).join('\n\n');
   return repos.map((repo) => `### [${text(repo.name)}](${safeUrl(repo.url)})\n${text(repo.description || 'Proyecto destacado')}\n\n⭐ ${repo.stars} · 🍴 ${repo.forks}${repo.language ? ` · ${text(repo.language)}` : ''}`).join('\n\n');
+}
+
+function about(profile: GitHubProfile): string {
+  const { user } = profile;
+  const details = [
+    user.location ? `📍 ${text(user.location)}  ` : '',
+    user.company ? `💼 ${text(user.company)}  ` : '',
+    user.blog ? `🌐 [Website](${safeUrl(user.blog)})  ` : '',
+  ].filter(Boolean);
+  return details.length ? `## About me\n\n${details.join('\n')}\n\n` : '';
+}
+
+function contributionCards(profile: GitHubProfile, includeActivity = false): string {
+  if (!Object.keys(profile.contributionStats.contributionsByDay).length) return '';
+  const cards = [adaptive('streak', 'Contribution streak')];
+  if (includeActivity) cards.push(adaptive('contributions', 'Contribution activity'));
+  return `${cards.join('\n\n')}\n\n`;
 }
 
 function snake(options?: ReadmeOptions): string { return options?.includeSnake ? `\n\n## Contribution Snake\n\n${adaptive('snake', 'Contribution snake')}` : ''; }
@@ -55,7 +72,7 @@ class MinimalistStrategy implements IReadmeStrategy {
   id = 'minimalist'; name = 'Minimalista'; description = 'Perfil limpio y simple con información esencial';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `# Hi, I'm ${text(user.name || user.username)} 👋\n\n${user.bio ? `> ${text(user.bio)}\n\n` : ''}## About me\n\n${user.location ? `📍 ${text(user.location)}  \n` : ''}${user.company ? `💼 ${text(user.company)}  \n` : ''}${user.blog ? `🌐 [Website](${safeUrl(user.blog)})  \n` : ''}\n## GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n## Top languages\n\n${adaptive('languages', 'Top languages')}\n\n## Featured projects\n\n${projects(profile)}${snake(options)}\n\n---\n\n${links(profile)}\n`;
+    return `# Hi, I'm ${text(user.name || user.username)} 👋\n\n${user.bio ? `> ${text(user.bio)}\n\n` : ''}${about(profile)}## GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n## Top languages\n\n${adaptive('languages', 'Top languages')}\n\n## Featured projects\n\n${projects(profile)}${snake(options)}\n\n---\n\n${links(profile)}\n`;
   }
 }
 
@@ -63,7 +80,7 @@ class PortfolioStrategy implements IReadmeStrategy {
   id = 'portfolio'; name = 'Portafolio Desarrollador'; description = 'Portafolio profesional con habilidades y proyectos destacados';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `<div align="center">\n\n# ${text(user.name || user.username)}\n\n${user.bio ? `### ${text(user.bio)}\n\n` : ''}${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 🛠️ Tech stack\n\n${profile.topLanguages.map((language) => `- ${text(language.language)} — ${language.percentage}%`).join('\n')}\n\n## 📊 GitHub analytics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n${adaptive('streak', 'Contribution streak')}\n\n${adaptive('contributions', 'Contribution activity')}\n\n## 🚀 Featured projects\n\n${projects(profile, true)}${snake(options)}\n\n## 🤝 Let's connect\n\n${links(profile)}\n`;
+    return `<div align="center">\n\n# ${text(user.name || user.username)}\n\n${user.bio ? `### ${text(user.bio)}\n\n` : ''}${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 🛠️ Tech stack\n\n${profile.topLanguages.map((language) => `- ${text(language.language)} — ${language.percentage}%`).join('\n')}\n\n## 📊 GitHub analytics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n${contributionCards(profile, true)}## 🚀 Featured projects\n\n${projects(profile, true)}${snake(options)}\n\n## 🤝 Let's connect\n\n${links(profile)}\n`;
   }
 }
 
@@ -71,7 +88,7 @@ class CreativeStrategy implements IReadmeStrategy {
   id = 'creative'; name = 'Creativa'; description = 'Diseño visual con recursos SVG locales';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n  location: ${JSON.stringify(user.location || 'Earth')},\n  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${adaptive('trophies', 'GitHub trophies')}\n\n## 📊 GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('streak', 'Contribution streak')}\n\n## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${adaptive('footer', 'Footer')}\n`;
+    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n  location: ${JSON.stringify(user.location || 'Earth')},\n  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${adaptive('trophies', 'GitHub trophies')}\n\n## 📊 GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n${contributionCards(profile)}## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${adaptive('footer', 'Footer')}\n`;
   }
 }
 
@@ -80,7 +97,7 @@ class TerminalStrategy implements IReadmeStrategy {
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
     const skills = profile.topLanguages.slice(0, 8).map((language) => `${language.language.padEnd(15)} ${'█'.repeat(Math.min(10, Math.ceil(language.percentage / 10))).padEnd(10, '░')} ${language.percentage}%`).join('\n');
-    return `\`\`\`text\n$ whoami\n${text(user.name || user.username)}\n\n$ cat profile.txt\n${text(user.bio || 'Developer')}\nLocation: ${text(user.location || 'Unknown')}\nPublic repos: ${user.publicRepos}\nFollowers: ${user.followers}\n\n$ ls skills/\n${skills}\n\`\`\`\n\n## System metrics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n## Repositories\n\n${projects(profile)}${snake(options)}\n\n\`\`\`text\n$ cat social-links.txt\n${links(profile)}\n\n$ echo "Thanks for visiting!"\n\`\`\`\n`;
+    return `\`\`\`text\n$ whoami\n${text(user.name || user.username)}\n\n$ cat profile.txt\n${text(user.bio || 'Developer')}\nLocation: ${text(user.location || 'Unknown')}\nPublic repos: ${user.publicRepos}\nFollowers: ${user.followers}\n\n$ ls skills/\n${skills}\n\`\`\`\n\n## System metrics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n## Repositories\n\n${projects(profile)}${snake(options)}\n\n\`\`\`text\n$ echo "Thanks for visiting!"\n\`\`\`\n\n## Links\n\n${links(profile)}\n`;
   }
 }
 

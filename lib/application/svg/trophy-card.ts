@@ -42,11 +42,11 @@ export interface TrophyCardParams {
   theme?: string;
   stats: {
     stars: number;
-    commits: number;
-    prs: number;
-    issues: number;
+    forks: number;
     followers: number;
     repos: number;
+    languages: number;
+    featured: number;
   };
   hideBorder?: boolean;
 }
@@ -66,11 +66,11 @@ export function generateTrophyCardSvg(params: TrophyCardParams): string {
 
   const trophySpecs = [
     { label: 'Stars', value: stats.stars, icon: '⭐', thresholds: [0, 10, 50, 100, 500, 1000] },
-    { label: 'Commits', value: stats.commits, icon: '📝', thresholds: [0, 100, 500, 1000, 2000, 5000] },
-    { label: 'PRs', value: stats.prs, icon: '🔀', thresholds: [0, 10, 50, 100, 200, 500] },
-    { label: 'Issues', value: stats.issues, icon: '❗️', thresholds: [0, 10, 50, 100, 200, 500] },
+    { label: 'Forks', value: stats.forks, icon: '⑂', thresholds: [0, 5, 20, 50, 100, 500] },
     { label: 'Followers', value: stats.followers, icon: '👥', thresholds: [0, 10, 50, 100, 200, 500] },
     { label: 'Repos', value: stats.repos, icon: '📁', thresholds: [0, 5, 10, 20, 50, 100] },
+    { label: 'Languages', value: stats.languages, icon: '⌨️', thresholds: [0, 2, 4, 6, 8, 12] },
+    { label: 'Featured', value: stats.featured, icon: '◆', thresholds: [0, 2, 4, 6, 8, 12] },
   ];
 
   const trophies = trophySpecs.map(spec => {
