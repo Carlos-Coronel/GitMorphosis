@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import type { GeneratedAsset } from '@/lib/domain/types';
+import { renderReadmePreview, type PreviewTheme } from '@/lib/application/markdown-preview';
 
 interface ReadmePreviewProps {
   markdown: string;
@@ -31,7 +32,7 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
   const [activeTab, setActiveTab] = useState('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
   // previewTheme drives which variant of the adaptive images to show
-  const [previewTheme, setPreviewTheme] = useState<'dark' | 'light'>('dark');
+  const [previewTheme, setPreviewTheme] = useState<PreviewTheme>('dark');
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -114,7 +115,7 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
           </style>
         </head>
         <body>
-          ${renderMarkdown(markdown, previewTheme)}
+          ${renderReadmePreview(markdown, previewTheme, assets)}
         </body>
         </html>
       `);
@@ -123,126 +124,8 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
     }
   };
 
-  // ── Core Markdown → HTML converter ──────────────────────────────────────────
-  const renderMarkdown = (md: string, theme: 'dark' | 'light'): string => {
-    const isDark = theme === 'dark';
-    const escapeHtml = (value: string) => value
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-    const resolveUrl = (url: string): string => {
-      const asset = assets.find((item) => item.path === url);
-      if (!asset) return url;
-      return `data:${asset.mimeType};charset=utf-8,${encodeURIComponent(asset.content)}`;
-    };
-
-    function inline(text: string): string {
-      return text
-        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g,
-          (_match, alt, src, href) => `<a href="${href}" target="_blank" rel="noopener noreferrer"><img src="${resolveUrl(src)}" alt="${alt}" loading="lazy" onerror="this.style.opacity='0.3'" /></a>`)
-        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
-          const resolvedSrc = resolveUrl(src);
-          const isStatsCard = src.startsWith('assets/');
-          const classAttr = isStatsCard ? ' class="stats-card"' : '';
-          return `<img src="${resolvedSrc}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
-        })
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    }
-
-    // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
-    let processed = md.replace(/<picture>([\s\S]*?)<\/picture>/gi, (match) => {
-      const darkMatch = match.match(/<source[^>]*media="\(prefers-color-scheme: dark\)"[^>]*srcset="([^"]+)"/i);
-      const lightMatch = match.match(/<source[^>]*media="\(prefers-color-scheme: light\)"[^>]*srcset="([^"]+)"/i);
-      const imgMatch = match.match(/<img[^>]*src="([^"]+)"/i);
-      const altMatch = match.match(/alt="([^"]*)"/i);
-      const heightMatch = match.match(/height="([^"]*)"/i);
-
-      const darkSrc = darkMatch ? darkMatch[1] : (imgMatch ? imgMatch[1] : '');
-      const lightSrc = lightMatch ? lightMatch[1] : (imgMatch ? imgMatch[1] : '');
-      const alt = altMatch ? altMatch[1] : '';
-      const height = heightMatch ? heightMatch[1] : '';
-
-      const rawSrc = isDark ? darkSrc : lightSrc;
-      const src = resolveUrl(rawSrc);
-      
-      const isCard = src.startsWith('data:') || rawSrc.startsWith('assets/');
-        
-      const heightAttr = height ? ` height="${height}"` : '';
-      const classAttr = isCard ? ' class="stats-card"' : '';
-      
-      return `<img src="${src}" alt="${alt}"${heightAttr}${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
-    });
-
-    // ── 2. Block processing ────────────────────────────────────────────────
-    const blocks = processed.trim().split(/\n\n+/);
-    const htmlBlocks = blocks.map(block => {
-      if (block.startsWith('```')) {
-        return block.replace(
-          /```(\w+)?\n([\s\S]*?)```/g,
-          (_match, _language, code) => `<pre><code>${escapeHtml(code)}</code></pre>`
-        );
-      }
-      if (block.startsWith('#')) {
-        return block
-          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-          .replace(/\n/g, '');
-      }
-      if (block === '---') {
-        return '<hr />';
-      }
-      if (block.startsWith('>')) {
-        return `<blockquote>${inline(block.replace(/^> /gm, '')).replace(/\n/g, '<br />')}</blockquote>`;
-      }
-      if (block.match(/^[*-] /m)) {
-        const items = block.split('\n')
-          .filter(line => line.trim())
-          .map(line => `<li>${inline(line.replace(/^[*-] /, ''))}</li>`)
-          .join('');
-        return `<ul>${items}</ul>`;
-      }
-      if (block.includes('|') && block.includes('\n')) {
-        const lines = block.split('\n').filter(l => l.trim());
-        const rows = lines.filter(l => !l.match(/^\|?[-:\s|]+\|?$/)).map(line => {
-          const cells = line.split('|').filter((c, i, a) => {
-            if (i === 0 && c.trim() === '') return false;
-            if (i === a.length - 1 && c.trim() === '') return false;
-            return true;
-          });
-          return `<tr>${cells.map(c => `<td>${inline(c.trim())}</td>`).join('')}</tr>`;
-        }).join('');
-        return `<table>${rows}</table>`;
-      }
-
-      // ── Handle HTML blocks (div, p align) often used for centering
-      if (block.trim().startsWith('<div') || block.trim().startsWith('<p align')) {
-        const content = block.replace(/<(img|source)[^>]+>/gi, (tag) => {
-          if (tag.toLowerCase().startsWith('<img')) {
-            return tag.replace(/src="([^"]+)"/i, (_m, src) => `src="${resolveUrl(src)}"`);
-          }
-          if (tag.toLowerCase().startsWith('<source')) {
-            return tag.replace(/srcset="([^"]+)"/i, (_m, src) => `srcset="${resolveUrl(src)}"`);
-          }
-          return tag;
-        });
-        return `<div class="flex flex-col items-center justify-center gap-2 my-4 text-center">${inline(content)}</div>`;
-      }
-
-      return `<p>${inline(block).replace(/\n/g, '<br />')}</p>`;
-    });
-
-    return htmlBlocks.join('\n');
-  };
-
   // Renderiza la vista con la variante de tema seleccionada.
-  const renderedHtml = renderMarkdown(markdown, previewTheme);
+  const renderedHtml = renderReadmePreview(markdown, previewTheme, assets);
 
   // ── Content ──────────────────────────────────────────────────────────────
   const PreviewContent = () => (
@@ -403,9 +286,8 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
             {/* The preview area itself uses the previewTheme colours */}
             <div
               className={cn(
-                'p-6 overflow-auto custom-scrollbar markdown-preview transition-colors duration-300',
+                'p-6 overflow-x-auto custom-scrollbar markdown-preview transition-colors duration-300',
                 previewTheme === 'dark' ? 'bg-[#0d1117] text-[#c9d1d9]' : 'bg-[#ffffff] text-[#24292f]',
-                isFullscreen ? 'max-h-[calc(100vh-180px)]' : 'max-h-[600px]'
               )}
               data-preview-theme={previewTheme}
               dangerouslySetInnerHTML={{ __html: renderedHtml }}

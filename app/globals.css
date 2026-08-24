@@ -163,176 +163,195 @@
   scrollbar-color: var(--border) var(--muted);
 }
 
-/* ===== ESTILOS DE MARKDOWN PREVIEW ===== */
-.markdown-preview h1 {
-  @apply text-3xl font-bold mb-6 text-foreground pb-3 border-b border-border/50;
+/* ===== GITHUB README PREVIEW =====
+   Mirrors the current profile README typography and spacing from GitHub.
+   Generated SVGs remain untouched: no decorative radius, shadow or hover. */
+.markdown-preview {
+  color: #f0f6fc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
 }
 
+.markdown-preview *,
+.markdown-preview *::before,
+.markdown-preview *::after {
+  box-sizing: border-box;
+}
+
+.markdown-preview > :first-child,
+.markdown-preview div[align="center"] > :first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-preview > :last-child,
+.markdown-preview div[align="center"] > :last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  color: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-block: 24px 16px;
+}
+
+.markdown-preview h1,
 .markdown-preview h2 {
-  @apply text-2xl font-semibold mb-4 mt-8 text-foreground flex items-center gap-2;
+  border-bottom: 1px solid rgba(61, 68, 77, 0.7);
+  padding-bottom: 0.3em;
 }
 
-.markdown-preview h2::before {
-  content: '';
-  @apply w-1 h-6 bg-primary rounded-full;
-}
+.markdown-preview h1 { font-size: 2em; }
+.markdown-preview h2 { font-size: 1.5em; }
+.markdown-preview h3 { font-size: 1.25em; }
+.markdown-preview h4 { font-size: 1em; }
+.markdown-preview h5 { font-size: 0.875em; }
+.markdown-preview h6 { color: #9198a1; font-size: 0.85em; }
 
-.markdown-preview h3 {
-  @apply text-xl font-medium mb-3 mt-6 text-foreground;
-}
-
-.markdown-preview p {
-  @apply mb-4 text-muted-foreground leading-relaxed;
-}
-
-.markdown-preview code {
-  @apply bg-muted/80 px-2 py-1 rounded-md text-sm font-mono text-primary border border-border/50;
-}
-
-.markdown-preview pre {
-  @apply bg-muted/50 p-5 rounded-xl overflow-x-auto mb-6 border border-border/50 relative;
-}
-
-.markdown-preview pre::before {
-  content: '';
-  @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-chart-2 to-chart-4 rounded-t-xl;
-}
-
-.markdown-preview pre code {
-  @apply bg-transparent p-0 border-0 text-muted-foreground;
-}
-
-.markdown-preview img {
-  @apply max-w-full h-auto rounded-xl my-6 shadow-lg ring-1 ring-border/50;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-height: 20px;
-}
-
-.markdown-preview img:hover {
-  transform: scale(1.02);
-  box-shadow: 0 20px 40px -12px oklch(0.75 0.18 175 / 0.2);
+.markdown-preview p,
+.markdown-preview blockquote,
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview dl,
+.markdown-preview table,
+.markdown-preview pre,
+.markdown-preview details {
+  margin-block: 0 16px;
 }
 
 .markdown-preview a {
-  @apply text-primary hover:text-primary/80 underline underline-offset-4 decoration-primary/50 hover:decoration-primary transition-colors;
+  color: #4493f8;
+  text-decoration: none;
 }
 
-.markdown-preview ul {
-  @apply list-none mb-4 text-muted-foreground space-y-2;
-}
+.markdown-preview a:hover { text-decoration: underline; }
 
-.markdown-preview ul li {
-  @apply relative pl-6;
-}
-
-.markdown-preview ul li::before {
-  content: '▸';
-  @apply absolute left-0 text-primary;
-}
-
+.markdown-preview ul,
 .markdown-preview ol {
-  @apply list-decimal list-inside mb-4 text-muted-foreground space-y-2;
+  padding-left: 2em;
 }
+
+.markdown-preview li + li { margin-top: 0.25em; }
+.markdown-preview li > p { margin-top: 16px; }
 
 .markdown-preview blockquote {
-  @apply border-l-4 border-primary/60 pl-5 italic text-muted-foreground my-6 py-2 bg-muted/30 rounded-r-lg;
+  border-left: 0.25em solid #3d444d;
+  color: #9198a1;
+  padding-inline: 1em;
 }
+
+.markdown-preview code,
+.markdown-preview tt {
+  background-color: rgba(101, 108, 118, 0.2);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 85%;
+  margin: 0;
+  padding: 0.2em 0.4em;
+}
+
+.markdown-preview pre {
+  background-color: #151b23;
+  border-radius: 6px;
+  font-size: 85%;
+  line-height: 1.45;
+  overflow: auto;
+  padding: 16px;
+}
+
+.markdown-preview pre code {
+  background: transparent;
+  border: 0;
+  display: inline;
+  font-size: 100%;
+  line-height: inherit;
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+  word-break: normal;
+  white-space: pre;
+}
+
+.markdown-preview img {
+  background-color: transparent;
+  box-sizing: content-box;
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+/* GitHub replaces picture with an inline themed-picture wrapper. Using
+   display: contents reproduces its line wrapping, baseline and card grid. */
+.markdown-preview picture { display: contents; }
+.markdown-preview > a:has(> picture) {
+  display: inline-block;
+  margin-right: 4px;
+}
+.markdown-preview div[align="center"] picture + picture img { margin-top: 10px; }
+.markdown-preview div[align="center"],
+.markdown-preview p[align="center"] { text-align: center; }
 
 .markdown-preview table {
-  @apply w-full border-collapse mb-6 rounded-xl overflow-hidden;
+  border-collapse: collapse;
+  border-spacing: 0;
+  display: block;
+  max-width: 100%;
+  overflow: auto;
+  width: max-content;
 }
 
-.markdown-preview th,
-.markdown-preview td {
-  @apply border border-border px-4 py-3 text-left;
+.markdown-preview table tr {
+  background-color: #0d1117;
+  border-top: 1px solid #3d444d;
 }
 
-.markdown-preview th {
-  @apply bg-muted/80 font-semibold text-foreground;
+.markdown-preview table tr:nth-child(2n) { background-color: #151b23; }
+
+.markdown-preview table th,
+.markdown-preview table td {
+  border: 1px solid #3d444d;
+  padding: 6px 13px;
 }
 
-.markdown-preview tr:nth-child(even) td {
-  @apply bg-muted/30;
-}
+.markdown-preview table th { font-weight: 600; }
 
 .markdown-preview hr {
-  @apply my-8 border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent;
+  background-color: #3d444d;
+  border: 0;
+  height: 0.25em;
+  margin: 24px 0;
+  padding: 0;
 }
 
-/* ── Light Preview Theme overrides ──────────────────────────────────────────
-   Applied when the preview toggles to "Claro" mode (bg-[#ffffff] / text-[#24292f]).
-   We scope all overrides under a data attribute so they don't bleed to the app. */
 .markdown-preview[data-preview-theme="light"] {
-  color: #24292f;
   background: #ffffff;
+  color: #1f2328;
 }
+
 .markdown-preview[data-preview-theme="light"] h1,
-.markdown-preview[data-preview-theme="light"] h2,
-.markdown-preview[data-preview-theme="light"] h3 {
-  color: #24292f;
-  border-color: #d0d7de;
+.markdown-preview[data-preview-theme="light"] h2 {
+  border-bottom-color: #d1d9e0;
 }
-.markdown-preview[data-preview-theme="light"] h2::before {
-  background: #0969da;
-}
-.markdown-preview[data-preview-theme="light"] p,
-.markdown-preview[data-preview-theme="light"] ul,
-.markdown-preview[data-preview-theme="light"] ol,
-.markdown-preview[data-preview-theme="light"] li {
-  color: #57606a;
-}
-.markdown-preview[data-preview-theme="light"] code {
-  background: #f6f8fa;
-  color: #0969da;
-  border-color: #d0d7de;
-}
-.markdown-preview[data-preview-theme="light"] pre {
-  background: #f6f8fa;
-  border-color: #d0d7de;
-}
-.markdown-preview[data-preview-theme="light"] pre::before {
-  background: linear-gradient(90deg, #0969da, #54aeff, #6fdd8b);
-}
-.markdown-preview[data-preview-theme="light"] pre code {
-  color: #24292f;
-}
-.markdown-preview[data-preview-theme="light"] a {
-  color: #0969da;
-  text-decoration-color: #0969da80;
-}
-.markdown-preview[data-preview-theme="light"] blockquote {
-  border-color: #d0d7de;
-  color: #57606a;
-  background: #f6f8fa;
-}
-.markdown-preview[data-preview-theme="light"] table {
-  border-color: #d0d7de;
-}
-.markdown-preview[data-preview-theme="light"] th,
-.markdown-preview[data-preview-theme="light"] td {
-  border-color: #d0d7de;
-  color: #24292f;
-}
-.markdown-preview[data-preview-theme="light"] th {
-  background: #f6f8fa;
-  color: #24292f;
-}
-.markdown-preview[data-preview-theme="light"] tr:nth-child(even) td {
-  background: #f6f8fa80;
-}
-.markdown-preview[data-preview-theme="light"] hr {
-  background: linear-gradient(90deg, transparent, #d0d7de, transparent);
-}
-.markdown-preview[data-preview-theme="light"] img {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
-  border: 1px solid #d0d7de;
-}
-.markdown-preview[data-preview-theme="light"] ul li::before {
-  color: #0969da;
-}
-.markdown-preview[data-preview-theme="light"] img:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+
+.markdown-preview[data-preview-theme="light"] h6,
+.markdown-preview[data-preview-theme="light"] blockquote { color: #59636e; }
+.markdown-preview[data-preview-theme="light"] blockquote { border-left-color: #d1d9e0; }
+.markdown-preview[data-preview-theme="light"] a { color: #0969da; }
+.markdown-preview[data-preview-theme="light"] code,
+.markdown-preview[data-preview-theme="light"] tt { background-color: #818b981f; }
+.markdown-preview[data-preview-theme="light"] pre { background-color: #f6f8fa; }
+.markdown-preview[data-preview-theme="light"] table tr { background-color: #ffffff; border-top-color: #d1d9e0; }
+.markdown-preview[data-preview-theme="light"] table tr:nth-child(2n) { background-color: #f6f8fa; }
+.markdown-preview[data-preview-theme="light"] table th,
+.markdown-preview[data-preview-theme="light"] table td { border-color: #d1d9e0; }
+.markdown-preview[data-preview-theme="light"] hr { background-color: #d1d9e0; }
 
 /* ===== FONDO ANIMADO ===== */
 .animated-gradient {
@@ -440,25 +459,6 @@
   box-shadow: 
     0 4px 30px oklch(0 0 0 / 0.3),
     inset 0 1px 0 oklch(1 0 0 / 0.1);
-}
-
-/* ===== RESPONSIVE UTILS ===== */
-@media (max-width: 640px) {
-  .markdown-preview h1 {
-    @apply text-2xl;
-  }
-  
-  .markdown-preview h2 {
-    @apply text-xl;
-  }
-  
-  .markdown-preview h3 {
-    @apply text-lg;
-  }
-  
-  .markdown-preview img {
-    @apply my-4;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

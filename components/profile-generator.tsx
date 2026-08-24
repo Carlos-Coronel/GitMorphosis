@@ -39,7 +39,7 @@ export function ProfileGenerator() {
     <div className="min-h-screen animated-gradient">
       <div className="container mx-auto px-4 py-8 md:py-12">
         <GeneratorHero />
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           <div className="glass-card rounded-xl px-4 py-3 text-sm text-muted-foreground" role="status">
             Motor local activo · Solo se consulta la API oficial de GitHub
             {rateLimit && <span className="ml-2 text-primary">{rateLimit.remaining}/{rateLimit.limit} solicitudes disponibles</span>}
@@ -99,12 +99,12 @@ export function ProfileGenerator() {
           )}
 
           {result && (
-            <div id="profile-result" className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-4">
-              <aside className="lg:col-span-1 space-y-6">
+            <div id="profile-result" className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,881px)] lg:justify-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-4">
+              <aside className="space-y-6">
                 <ProfileStats user={result.profile.user} topLanguages={result.profile.topLanguages} />
                 <ActionButtons result={result} />
               </aside>
-              <main className="lg:col-span-2">
+              <main className="min-w-0">
                 <ReadmePreview
                   markdown={result.markdown}
                   username={result.profile.user.username}
