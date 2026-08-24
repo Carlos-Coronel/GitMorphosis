@@ -282,6 +282,7 @@
 .markdown-preview img {
   background-color: transparent;
   box-sizing: content-box;
+  display: inline;
   height: auto;
   max-width: 100%;
   vertical-align: middle;
@@ -292,9 +293,11 @@
 .markdown-preview picture { display: contents; }
 .markdown-preview > a:has(> picture) {
   display: inline-block;
+  margin-bottom: 5px;
   margin-right: 4px;
 }
-.markdown-preview div[align="center"] picture + picture img { margin-top: 10px; }
+.markdown-preview div[align="center"] { padding-bottom: 5px; }
+.markdown-preview div[align="center"] picture + picture img { margin-top: 5px; }
 .markdown-preview div[align="center"],
 .markdown-preview p[align="center"] { text-align: center; }
 

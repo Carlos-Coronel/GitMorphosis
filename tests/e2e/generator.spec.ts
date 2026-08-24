@@ -1,7 +1,21 @@
 import { expect, test } from '@playwright/test';
 
 const githubUser = { login: 'octocat', name: 'The Octocat', bio: 'Open source developer', avatar_url: 'https://avatars.githubusercontent.com/u/1', location: 'GitHub', company: 'GitHub', blog: 'https://github.blog', twitter_username: null, followers: 42, following: 3, public_repos: 1, html_url: 'https://github.com/octocat' };
-const githubRepos = [{ name: 'hello-world', description: 'First repository', language: 'TypeScript', stargazers_count: 10, forks_count: 2, html_url: 'https://github.com/octocat/hello-world', fork: false, updated_at: '2026-01-01T00:00:00Z', topics: ['demo'], archived: false, disabled: false, visibility: 'public', size: 10 }];
+const githubRepos = ['hello-world', 'tools', 'website', 'profile'].map((name, index) => ({
+  name,
+  description: `Repository ${index + 1}`,
+  language: 'TypeScript',
+  stargazers_count: 10 - index,
+  forks_count: 2,
+  html_url: `https://github.com/octocat/${name}`,
+  fork: false,
+  updated_at: '2026-01-01T00:00:00Z',
+  topics: ['demo'],
+  archived: false,
+  disabled: false,
+  visibility: 'public',
+  size: 10,
+}));
 
 test.beforeEach(async ({ page }) => {
   await page.route('https://api.github.com/**', async (route) => {
@@ -57,26 +71,39 @@ test('reproduce la geometría y los estilos de un README de GitHub', async ({ pa
   await expect(heading).toHaveCSS('margin-bottom', '16px');
   await expect(firstImage).toHaveCSS('border-radius', '0px');
   await expect(firstImage).toHaveCSS('box-shadow', 'none');
+  await expect(firstImage).toHaveCSS('display', 'inline');
   await expect(preview.locator('picture').first()).toHaveCSS('display', 'contents');
 
   const geometry = await preview.evaluate((element) => {
     const images = [...element.querySelectorAll('img')];
+    const root = element.getBoundingClientRect();
+    const relativeRect = (image: HTMLImageElement) => {
+      const rect = image.getBoundingClientRect();
+      return { x: rect.x - root.x - 24, y: rect.y - root.y - 24, width: rect.width, height: rect.height };
+    };
     return {
       contentWidth: element.clientWidth - 48,
       overflow: element.scrollWidth > element.clientWidth,
       firstNaturalWidth: images[0]?.naturalWidth,
-      projectHeights: [...element.querySelectorAll(':scope > a img')].map((image) => image.getBoundingClientRect().height),
+      header: relativeRect(images[0]),
+      stack: relativeRect(images[1]),
+      projects: [...element.querySelectorAll<HTMLImageElement>(':scope > a img')].map(relativeRect),
     };
   });
 
   expect(geometry.overflow).toBe(false);
-  expect(new Set(geometry.projectHeights).size).toBe(1);
+  expect(new Set(geometry.projects.map((project) => project.height)).size).toBe(1);
+  expect(geometry.stack.y - geometry.header.y - geometry.header.height).toBeCloseTo(5, 0);
+  expect(geometry.stack.x).toBeCloseTo((geometry.contentWidth - geometry.stack.width) / 2, 0);
   if (testInfo.project.name === 'chromium') {
     expect(geometry.contentWidth).toBeGreaterThanOrEqual(830);
     expect(geometry.contentWidth).toBeLessThanOrEqual(833);
     expect(geometry.firstNaturalWidth).toBe(900);
+    expect(geometry.projects[1].x - geometry.projects[0].x - geometry.projects[0].width).toBeCloseTo(4, 0);
+    expect(geometry.projects[2].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(5, 0);
   } else {
     expect(geometry.firstNaturalWidth).toBe(340);
+    expect(geometry.projects[1].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(5, 0);
   }
 });
 
