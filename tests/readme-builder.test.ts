@@ -60,9 +60,17 @@ describe('motor autocontenido', () => {
     expect(portfolio.markdown).not.toContain('Contribution streak');
     expect(portfolio.markdown).not.toContain('Contribution activity');
     expect(creative.markdown).not.toContain('Contribution streak');
-    expect(creative.markdown).toContain('location: null');
+    expect(creative.markdown).not.toContain('location:');
     expect(creative.markdown).not.toContain('location: "Earth"');
     expect(createReadmeBuilder().build(sparse, 'terminal').markdown).not.toContain('Location: Unknown');
     expect([...portfolio.assets, ...creative.assets].some((asset) => asset.path.includes('streak-'))).toBe(false);
+  });
+
+  it('incluye variantes móviles claras y oscuras para cada tarjeta', () => {
+    const result = createReadmeBuilder().build(profileFixture, 'creative');
+    expect(result.markdown).toContain('assets/stats-mobile-dark.svg');
+    expect(result.markdown).toContain('assets/stats-mobile-light.svg');
+    expect(result.markdown).toContain('assets/project-1-mobile-dark.svg');
+    expect(result.assets.some((asset) => asset.path === 'assets/trophies-mobile-light.svg')).toBe(true);
   });
 });

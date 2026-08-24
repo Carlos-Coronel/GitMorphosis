@@ -18,4 +18,21 @@ describe('generadores SVG', () => {
     expect(result).toContain('</svg>');
     expect(result).not.toMatch(/<script|https?:\/\/(?!www\.w3\.org)/);
   });
+
+  it('mantiene una altura uniforme para proyectos con y sin descripción', () => {
+    const empty = generatePinCardSvg({ username: 'octocat', repo: 'empty' });
+    const described = generatePinCardSvg({ username: 'octocat', repo: 'full', description: 'Una descripción suficientemente larga para ocupar dos líneas dentro de la tarjeta del repositorio' });
+    expect(empty).toContain('height="162"');
+    expect(described).toContain('height="162"');
+  });
+
+  it('genera layouts móviles legibles y sin emojis dependientes del sistema', () => {
+    const stats = generateStatsCardSvg({ username: 'octocat', layout: 'mobile' });
+    const trophies = generateTrophyCardSvg({ layout: 'mobile', stats: { stars: 1, forks: 2, followers: 3, repos: 4, languages: 5, featured: 6 } });
+    const languages = generateTopLangsCardSvg({ width: 340, layout: 'compact', languages: [{ language: 'TypeScript', percentage: 100, color: '#3178c6' }] });
+    expect(stats).toContain('width="340" height="300"');
+    expect(trophies).toContain('width="340" height="316"');
+    expect(languages).toContain('width="340" height="160"');
+    expect(trophies).not.toMatch(/[⭐👥📁⌨️◆⑂]/u);
+  });
 });

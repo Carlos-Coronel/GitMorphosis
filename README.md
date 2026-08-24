@@ -8,7 +8,7 @@ Generador autocontenido de README para perfiles de GitHub. Funciona completament
 
 - Cuatro plantillas: Minimalista, Portafolio, Creativa y Terminal.
 - Estadísticas, lenguajes, proyectos, trofeos, rachas, actividad, cabeceras y snake generados localmente.
-- Variantes claras y oscuras mediante rutas relativas.
+- Variantes claras, oscuras y móviles mediante rutas relativas y `<picture>`.
 - Exportación ZIP con `README.md`, `assets/*.svg` y una guía de instalación.
 - Vista previa fiel a los archivos descargados.
 - Guía interactiva integrada que acompaña la generación e instalación.
@@ -45,6 +45,10 @@ La única comunicación de red realizada por el producto es con `https://api.git
 ```
 
 `INSTALACION.md` repite las instrucciones dentro del propio paquete. GitHub necesita que el repositorio del perfil sea público y que su nombre coincida con el usuario.
+
+### Actualizar un perfil ya instalado
+
+Los datos exportados son estáticos. Cuando cambien tus repositorios, seguidores, estrellas o lenguajes, genera un ZIP nuevo, elimina la carpeta `assets/` anterior y reemplaza juntos `README.md` y `assets/`. Después confirma todos los cambios con `git add -A`, un commit y push. Eliminar primero los recursos antiguos evita conservar SVG que una plantilla nueva ya no utiliza.
 
 ### Token y límites de GitHub
 

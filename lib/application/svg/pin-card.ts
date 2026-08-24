@@ -27,6 +27,7 @@ export interface PinCardParams {
   theme?: string;
   hideBorder?: boolean;
   showOwner?: boolean;
+  width?: 340 | 400;
 }
 
 function wrapText(text: string, maxChars = 55): string[] {
@@ -51,13 +52,13 @@ function wrapText(text: string, maxChars = 55): string[] {
 export function generatePinCardSvg(params: PinCardParams): string {
   const {
     username, repo, description, language, stars = 0, forks = 0,
-    theme = 'tokyonight', hideBorder = false, showOwner = true,
+    theme = 'tokyonight', hideBorder = false, showOwner = true, width = 400,
   } = params;
 
   const t = THEMES[theme] ?? THEMES.tokyonight;
-  const W = 400;
-  const descLines = wrapText(description || '');
-  const H = 130 + descLines.length * 16;
+  const W = width;
+  const descLines = wrapText(description || '', width === 340 ? 44 : 55);
+  const H = 162;
 
   const langColor = language ? (LANGUAGE_COLORS[language] || '#8b949e') : '#8b949e';
   const repoTitle = showOwner ? `${username}/${repo}` : repo;
@@ -66,9 +67,9 @@ export function generatePinCardSvg(params: PinCardParams): string {
     `<text x="20" y="${62 + i * 17}" fill="${t.desc}" font-size="12" font-family="'Segoe UI',Ubuntu,sans-serif">${line}</text>`
   ).join('\n  ');
 
-  const footerY = 62 + descLines.length * 17 + 14;
+  const footerY = H - 28;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Repository ${repoTitle}">
   <rect width="${W}" height="${H}" rx="10" fill="${t.bg}"/>
   ${hideBorder ? '' : `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="none" stroke="${t.border}" stroke-width="1"/>`}
 

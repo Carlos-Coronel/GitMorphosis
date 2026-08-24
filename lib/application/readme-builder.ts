@@ -20,8 +20,15 @@ function safeUrl(value: string): string {
   }
 }
 
-function adaptive(name: string, alt: string): string {
-  return `<picture>\n  <source media="(prefers-color-scheme: dark)" srcset="assets/${name}-dark.svg">\n  <source media="(prefers-color-scheme: light)" srcset="assets/${name}-light.svg">\n  <img alt="${attribute(alt)}" src="assets/${name}-dark.svg">\n</picture>`;
+function adaptive(name: string, alt: string, responsive = true): string {
+  const mobile = responsive
+    ? `  <source media="(max-width: 480px) and (prefers-color-scheme: dark)" srcset="assets/${name}-mobile-dark.svg">\n  <source media="(max-width: 480px) and (prefers-color-scheme: light)" srcset="assets/${name}-mobile-light.svg">\n`
+    : '';
+  return `<picture>\n${mobile}  <source media="(prefers-color-scheme: dark)" srcset="assets/${name}-dark.svg">\n  <source media="(prefers-color-scheme: light)" srcset="assets/${name}-light.svg">\n  <img alt="${attribute(alt)}" src="assets/${name}-dark.svg">\n</picture>`;
+}
+
+function centered(content: string): string {
+  return `<div align="center">\n\n${content}\n\n</div>`;
 }
 
 function links(profile: GitHubProfile): string {
@@ -59,7 +66,7 @@ function contributionCards(profile: GitHubProfile, includeActivity = false): str
   return `${cards.join('\n\n')}\n\n`;
 }
 
-function snake(options?: ReadmeOptions): string { return options?.includeSnake ? `\n\n## Contribution Snake\n\n${adaptive('snake', 'Contribution snake')}` : ''; }
+function snake(options?: ReadmeOptions): string { return options?.includeSnake ? `\n\n## Contribution Snake\n\n${adaptive('snake', 'Contribution snake', false)}` : ''; }
 
 export interface IReadmeStrategy {
   id: string;
@@ -80,7 +87,8 @@ class PortfolioStrategy implements IReadmeStrategy {
   id = 'portfolio'; name = 'Portafolio Desarrollador'; description = 'Portafolio profesional con habilidades y proyectos destacados';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `<div align="center">\n\n# ${text(user.name || user.username)}\n\n${user.bio ? `### ${text(user.bio)}\n\n` : ''}${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 🛠️ Tech stack\n\n${profile.topLanguages.map((language) => `- ${text(language.language)} — ${language.percentage}%`).join('\n')}\n\n## 📊 GitHub analytics\n\n${adaptive('stats', 'GitHub stats')}\n\n${adaptive('languages', 'Top languages')}\n\n${contributionCards(profile, true)}## 🚀 Featured projects\n\n${projects(profile, true)}${snake(options)}\n\n## 🤝 Let's connect\n\n${links(profile)}\n`;
+    const analytics = [adaptive('stats', 'GitHub stats'), adaptive('languages', 'Top languages'), contributionCards(profile, true).trim()].filter(Boolean).join('\n\n');
+    return `<div align="center">\n\n# ${text(user.name || user.username)}\n\n${user.bio ? `### ${text(user.bio)}\n\n` : ''}${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 🛠️ Tech stack\n\n${profile.topLanguages.map((language) => `- ${text(language.language)} — ${language.percentage}%`).join('\n')}\n\n## 📊 GitHub analytics\n\n${centered(analytics)}\n\n## 🚀 Featured projects\n\n${projects(profile, true)}${snake(options)}\n\n## 🤝 Let's connect\n\n${links(profile)}\n`;
   }
 }
 
@@ -88,7 +96,8 @@ class CreativeStrategy implements IReadmeStrategy {
   id = 'creative'; name = 'Creativa'; description = 'Diseño visual con recursos SVG locales';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n  location: ${JSON.stringify(user.location)},\n  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${adaptive('trophies', 'GitHub trophies')}\n\n## 📊 GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n${contributionCards(profile)}## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${adaptive('footer', 'Footer')}\n`;
+    const location = user.location ? `  location: ${JSON.stringify(user.location)},\n` : '';
+    return `<div align="center">\n\n${adaptive('header', user.name || user.username)}\n\n${adaptive('stack', 'Technology stack')}\n\n</div>\n\n## 💫 About me\n\n\`\`\`javascript\nconst developer = {\n  name: ${JSON.stringify(user.name || user.username)},\n${location}  languages: ${JSON.stringify(profile.topLanguages.slice(0, 5).map((item) => item.language))},\n  followers: ${user.followers},\n  publicRepos: ${user.publicRepos}\n};\n\`\`\`\n\n## 🏆 GitHub trophies\n\n${centered(adaptive('trophies', 'GitHub trophies'))}\n\n## 📊 GitHub stats\n\n${centered(`${adaptive('stats', 'GitHub stats')}\n\n${contributionCards(profile).trim()}`.trim())}\n\n## 🌟 Featured repositories\n\n${projects(profile, true)}${snake(options)}\n\n## 🌐 Connect\n\n${links(profile)}\n\n${centered(adaptive('footer', 'Footer'))}\n`;
   }
 }
 

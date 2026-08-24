@@ -11,7 +11,7 @@ export function safeBundleName(username: string): string {
 export function createReadmeBundle(result: Pick<GeneratedReadme, 'markdown' | 'assets'>): Uint8Array {
   const files: Record<string, Uint8Array> = {
     'README.md': encoder(result.markdown),
-    'INSTALACION.md': encoder('# Instalar tu perfil generado con GitMorphosis\n\n1. Crea un repositorio público con el mismo nombre que tu usuario de GitHub.\n2. Copia `README.md` y la carpeta completa `assets/` a la raíz del repositorio.\n3. Conserva los nombres y las rutas de todos los SVG.\n4. Confirma `README.md` y `assets/` en el mismo commit.\n5. Abre tu perfil de GitHub y comprueba el resultado.\n\n> No copies únicamente el Markdown: sus imágenes usan rutas relativas a `assets/`.\n'),
+    'INSTALACION.md': encoder('# Instalar tu perfil generado con GitMorphosis\n\n1. Crea un repositorio público con el mismo nombre que tu usuario de GitHub.\n2. Copia `README.md` y la carpeta completa `assets/` a la raíz del repositorio.\n3. Conserva los nombres y las rutas de todos los SVG.\n4. Confirma `README.md` y `assets/` en el mismo commit.\n5. Abre tu perfil de GitHub y comprueba el resultado.\n\n> No copies únicamente el Markdown: sus imágenes usan rutas relativas a `assets/`.\n\n## Actualizar los datos\n\nLos datos del ZIP son estáticos. Genera un paquete nuevo cuando cambie tu perfil, elimina la carpeta `assets/` anterior y reemplaza juntos `README.md` y `assets/`. Usa `git add -A` para que el commit también retire SVG obsoletos.\n'),
   };
   for (const asset of result.assets) {
     if (!isSafeAsset(asset)) throw new Error(`Ruta de recurso no válida: ${asset.path}`);

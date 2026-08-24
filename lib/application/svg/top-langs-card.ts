@@ -23,24 +23,26 @@ export interface TopLangsParams {
   hideBorder?: boolean;
   layout?: 'compact' | 'normal';
   langCount?: number;
+  width?: 340 | 495;
 }
 
 export function generateTopLangsCardSvg(params: TopLangsParams): string {
   const {
     languages, theme = 'tokyonight',
-    hideBorder = false, layout = 'normal', langCount = 8,
+    hideBorder = false, layout = 'normal', langCount = 8, width = 495,
   } = params;
 
   const t = THEMES[theme] ?? THEMES.tokyonight;
   const langs = languages.slice(0, langCount);
-  const W = 495; // Ancho estándar para tarjetas de GitHub
+  const W = width;
+  const mobile = width === 340;
 
   if (layout === 'compact') {
-    const H = 120;
+    const H = mobile ? 160 : 120;
     // Progress bar layout
     const total = langs.reduce((s, l) => s + l.percentage, 0) || 1;
     let xOffset = 25;
-    const barY = 70;
+    const barY = mobile ? 55 : 70;
     const barH = 10;
     const barW = W - 50;
 
@@ -53,17 +55,18 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
     }).join('');
 
     const labels = langs.slice(0, 6).map((l, i) => {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const x = 25 + col * 150; // Más espacio entre columnas
-      const y = barY + barH + 18 + row * 18;
+      const columns = mobile ? 2 : 3;
+      const col = i % columns;
+      const row = Math.floor(i / columns);
+      const x = (mobile ? 20 : 25) + col * (mobile ? 160 : 150);
+      const y = barY + barH + 18 + row * (mobile ? 22 : 18);
       const color = l.color || LANGUAGE_COLORS[l.language] || '#8b949e';
       return `<circle cx="${x}" cy="${y - 4}" r="5" fill="${color}"/>
-  <text x="${x + 15}" y="${y}" fill="${t.text}" font-size="11" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
-  <text x="${x + 130}" y="${y}" fill="${t.title}" font-size="11" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
+  <text x="${x + 15}" y="${y}" fill="${t.text}" font-size="${mobile ? 12 : 11}" font-family="'Segoe UI',Ubuntu,sans-serif">${l.language}</text>
+  <text x="${x + (mobile ? 142 : 130)}" y="${y}" fill="${t.title}" font-size="${mobile ? 12 : 11}" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
     }).join('');
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Most used languages">
   <rect width="${W}" height="${H}" rx="10" fill="${t.bg}"/>
   ${hideBorder ? '' : `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="none" stroke="${t.border}" stroke-width="1"/>`}
   <text x="25" y="28" fill="${t.title}" font-size="15" font-weight="700" font-family="'Segoe UI',Ubuntu,sans-serif">Most Used Languages</text>
@@ -78,7 +81,7 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
   // Normal layout: list with progress bars per language
   const itemH = 30;
   const H = 40 + langs.length * itemH + 20;
-  const barStart = 150; // Empezar la barra más a la derecha para dar espacio al texto
+  const barStart = mobile ? 120 : 150;
   const barMaxW = W - barStart - 55;
   const maxPct = Math.max(...langs.map(l => l.percentage), 1);
 
@@ -94,7 +97,7 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
   <text x="${W - 25}" y="${y + 4}" fill="${t.title}" font-size="11" font-weight="600" font-family="'Segoe UI',Ubuntu,sans-serif" text-anchor="end">${l.percentage.toFixed(1)}%</text>`;
   }).join('');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Most used languages">
   <rect width="${W}" height="${H}" rx="10" fill="${t.bg}"/>
   ${hideBorder ? '' : `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="none" stroke="${t.border}" stroke-width="1"/>`}
   <text x="25" y="28" fill="${t.title}" font-size="15" font-weight="700" font-family="'Segoe UI',Ubuntu,sans-serif">Most Used Languages</text>

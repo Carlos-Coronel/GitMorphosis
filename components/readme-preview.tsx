@@ -157,8 +157,8 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
 
     // ── 1. Adaptive <picture> tags ───────────────────────────────────────────
     let processed = md.replace(/<picture>([\s\S]*?)<\/picture>/gi, (match) => {
-      const darkMatch = match.match(/<source[^>]*media="[^"]*dark[^"]*"[^>]*srcset="([^"]+)"/i);
-      const lightMatch = match.match(/<source[^>]*media="[^"]*light[^"]*"[^>]*srcset="([^"]+)"/i);
+      const darkMatch = match.match(/<source[^>]*media="\(prefers-color-scheme: dark\)"[^>]*srcset="([^"]+)"/i);
+      const lightMatch = match.match(/<source[^>]*media="\(prefers-color-scheme: light\)"[^>]*srcset="([^"]+)"/i);
       const imgMatch = match.match(/<img[^>]*src="([^"]+)"/i);
       const altMatch = match.match(/alt="([^"]*)"/i);
       const heightMatch = match.match(/height="([^"]*)"/i);
