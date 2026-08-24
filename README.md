@@ -1,6 +1,6 @@
 # GitMorphosis
 
-Generador autocontenido de README para perfiles de GitHub. Funciona como una aplicación estática en GitHub Pages: consulta únicamente la API oficial de GitHub y crea todos los gráficos como SVG dentro del navegador.
+Generador autocontenido de README para perfiles de GitHub. Funciona completamente en el navegador: consulta únicamente la API oficial de GitHub, crea los gráficos como SVG locales y entrega un ZIP listo para instalar en el repositorio del perfil.
 
 [Demo](https://carlos-coronel.github.io/GitMorphosis/) · [Errores y sugerencias](https://github.com/Carlos-Coronel/GitMorphosis/issues) · [Licencia MIT](LICENSE)
 
@@ -11,21 +11,51 @@ Generador autocontenido de README para perfiles de GitHub. Funciona como una apl
 - Variantes claras y oscuras mediante rutas relativas.
 - Exportación ZIP con `README.md`, `assets/*.svg` y una guía de instalación.
 - Vista previa fiel a los archivos descargados.
+- Guía interactiva integrada que acompaña la generación e instalación.
 - Editor de enlaces sociales; los enlaces son navegables, pero no se cargan imágenes de terceros.
 - Token PAT opcional guardado solamente en `sessionStorage`.
 - Sin backend, telemetría, fuentes remotas ni servicios de tarjetas.
 
 La única comunicación de red realizada por el producto es con `https://api.github.com`. Sin token se aplican los límites públicos de GitHub. Con token se amplía el límite y se consultan repositorios fijados y contribuciones mediante GraphQL. El token nunca se envía a GitMorphosis ni se persiste después de cerrar la pestaña.
 
-## Uso
+## Guía rápida
 
 1. Introduce un usuario público de GitHub.
-2. Elige una plantilla y, opcionalmente, configura enlaces o el contribution snake.
-3. Descarga el ZIP completo.
-4. Copia `README.md` y la carpeta `assets/` a la raíz del repositorio de perfil `<usuario>/<usuario>`.
-5. Sube ambos elementos en el mismo commit.
+2. Elige una plantilla y abre **Opciones avanzadas** si quieres añadir enlaces, activar el contribution snake o usar un token.
+3. Revisa la vista previa y descarga **ZIP completo**.
+4. Crea —si todavía no existe— un repositorio público cuyo nombre sea exactamente igual a tu usuario: `<usuario>/<usuario>`.
+5. Extrae y sube `README.md` y la carpeta `assets/` a la raíz de ese repositorio, conservando sus nombres y estructura.
+6. Confirma los archivos en el mismo commit. GitHub mostrará el README en la portada de tu perfil.
 
-Copiar únicamente el Markdown no es suficiente: sus gráficos utilizan los SVG locales incluidos en `assets/`.
+> [!IMPORTANT]
+> Copiar únicamente el Markdown no es suficiente: los gráficos usan rutas relativas hacia los SVG incluidos en `assets/`.
+
+### Contenido de la descarga
+
+```text
+gitmorphosis-<usuario>/
+├── README.md
+├── INSTALACION.md
+└── assets/
+    ├── header.svg
+    ├── stats.svg
+    └── ...
+```
+
+`INSTALACION.md` repite las instrucciones dentro del propio paquete. GitHub necesita que el repositorio del perfil sea público y que su nombre coincida, respetando mayúsculas y minúsculas, con el usuario.
+
+### Token y límites de GitHub
+
+El token es opcional. Sin token, GitMorphosis funciona con el límite público de la API y usa los repositorios más populares como alternativa a los fijados. Con token puede consultar los repositorios fijados reales y datos GraphQL adicionales.
+
+- El token se conserva exclusivamente en `sessionStorage` y desaparece al cerrar la pestaña.
+- Solo se envía a `api.github.com`; nunca se incluye en el ZIP ni en el Markdown.
+- Para perfiles públicos utiliza un token de permisos mínimos y no habilites acceso de escritura.
+- Un error `403` o `429` normalmente indica que el límite se agotó; espera el reinicio o usa un token válido.
+
+## Privacidad y autonomía
+
+La aplicación desplegada no usa backend propio, analítica, cookies, fuentes remotas ni proveedores externos de tarjetas. Las imágenes del README son SVG generados localmente. Los enlaces normales a GitHub, correo, redes sociales o sitios personales pueden aparecer en el resultado, pero no se cargan recursos visuales ni scripts desde esos destinos.
 
 ## Desarrollo
 
@@ -47,7 +77,7 @@ pnpm test           # tests unitarios, integración y UI
 pnpm test:coverage  # tests con umbrales de cobertura
 pnpm build:pages    # exportación bajo /GitMorphosis
 pnpm test:e2e       # Chromium escritorio y móvil
-pnpm verify         # lint, tipos, cobertura y build
+pnpm verify         # lint, código muerto, tipos, cobertura y build
 pnpm clean          # elimina .next y out en Windows/Linux/macOS
 ```
 
@@ -76,3 +106,11 @@ Las dependencias apuntan hacia el dominio: `application` contiene los casos de u
 La integración continua exige instalación congelada, lint, análisis de código muerto, tipos, cobertura, build estático y E2E. Los umbrales mínimos son 75% de líneas y sentencias, 80% de funciones y 60% de ramas. El workflow de `main` solo publica el artefacto `out/` en GitHub Pages después de superar esas puertas. Los directorios `out/`, `.next/`, cobertura y resultados de Playwright nunca se versionan.
 
 GitMorphosis se distribuye bajo la [licencia MIT](LICENSE).
+
+## Solución de problemas
+
+- **El usuario no aparece:** comprueba que el perfil sea público y que el nombre esté escrito correctamente.
+- **Faltan repositorios fijados:** genera de nuevo con un token válido; REST no expone esa información.
+- **No se ven los gráficos en el perfil:** verifica que `assets/` esté junto a `README.md` y que no hayas renombrado sus SVG.
+- **GitHub no muestra el README en el perfil:** el repositorio debe ser público y llamarse exactamente igual que tu usuario.
+- **El ZIP fue bloqueado por el navegador:** permite descargas para el sitio y vuelve a pulsar **Descargar ZIP completo**.

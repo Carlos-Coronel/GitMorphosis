@@ -11,6 +11,7 @@ import { AdvancedSettings } from '@/components/generator/advanced-settings';
 import { ActionButtons } from '@/components/generator/action-buttons';
 import { LoadingState } from '@/components/generator/loading-state';
 import { EmptyState } from '@/components/generator/empty-state';
+import { ProfileGuide } from '@/components/generator/profile-guide';
 import { EXAMPLE_USERS } from '@/components/generator/constants';
 import { createReadmeBuilder } from '@/lib/application/readme-builder';
 import { Code2, AlertCircle } from 'lucide-react';
@@ -44,7 +45,12 @@ export function ProfileGenerator() {
             {rateLimit && <span className="ml-2 text-primary">{rateLimit.remaining}/{rateLimit.limit} solicitudes disponibles</span>}
           </div>
 
-          <div className="fade-in-up stagger-4 opacity-0">
+          <ProfileGuide
+            generatedUsername={result?.profile.user.username}
+            assetCount={result?.assets.length}
+          />
+
+          <div id="profile-username" className="fade-in-up stagger-4 opacity-0 scroll-mt-4">
             <UsernameInput onSubmit={handleGenerate} isLoading={isLoading} />
           </div>
 
@@ -66,19 +72,23 @@ export function ProfileGenerator() {
             </div>
           )}
 
-          <TemplateSelector
-            templates={README_TEMPLATES}
-            selectedId={selectedTemplate}
-            onSelect={handleTemplateChange}
-            disabled={isLoading}
-          />
+          <div id="profile-templates" className="scroll-mt-4">
+            <TemplateSelector
+              templates={README_TEMPLATES}
+              selectedId={selectedTemplate}
+              onSelect={handleTemplateChange}
+              disabled={isLoading}
+            />
+          </div>
 
-          <AdvancedSettings
-            result={result}
-            config={config}
-            onTokenChange={handleTokenChange}
-            updateConfig={updateConfig}
-          />
+          <div id="profile-settings" className="scroll-mt-4">
+            <AdvancedSettings
+              result={result}
+              config={config}
+              onTokenChange={handleTokenChange}
+              updateConfig={updateConfig}
+            />
+          </div>
 
           {error && (
             <Alert variant="destructive" className="animate-in shake duration-500">
@@ -89,7 +99,7 @@ export function ProfileGenerator() {
           )}
 
           {result && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div id="profile-result" className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-4">
               <aside className="lg:col-span-1 space-y-6">
                 <ProfileStats user={result.profile.user} topLanguages={result.profile.topLanguages} />
                 <ActionButtons result={result} />
