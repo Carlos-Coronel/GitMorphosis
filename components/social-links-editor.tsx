@@ -25,12 +25,12 @@ const SOCIAL_PLATFORMS = [
   { id: 'linkedin', name: 'LinkedIn', color: '#0A66C2', placeholder: 'in/usuario' },
   { id: 'instagram', name: 'Instagram', color: '#E4405F', placeholder: 'usuario' },
   { id: 'youtube', name: 'YouTube', color: '#FF0000', placeholder: '@canal' },
-  { id: 'discord', name: 'Discord', color: '#5865F2', placeholder: 'usuario#0000' },
+  { id: 'discord', name: 'Discord', color: '#5865F2', placeholder: 'id numérico' },
   { id: 'twitch', name: 'Twitch', color: '#9146FF', placeholder: 'canal' },
   { id: 'dev', name: 'Dev.to', color: '#0A0A0A', placeholder: 'usuario' },
   { id: 'medium', name: 'Medium', color: '#000000', placeholder: '@usuario' },
   { id: 'hashnode', name: 'Hashnode', color: '#2962FF', placeholder: '@usuario' },
-  { id: 'stackoverflow', name: 'Stack Overflow', color: '#F48024', placeholder: 'user/id' },
+  { id: 'stackoverflow', name: 'Stack Overflow', color: '#F48024', placeholder: 'users/id/nombre' },
   { id: 'email', name: 'Email', color: '#EA4335', placeholder: 'correo@ejemplo.com' },
   { id: 'website', name: 'Sitio Web', color: '#4285F4', placeholder: 'https://mi-sitio.com' },
 ];
@@ -231,12 +231,14 @@ export function SocialLinksEditor({
                     {platformInfo?.name}
                   </Label>
                   <Switch
+                    aria-label={`${link.enabled ? 'Desactivar' : 'Activar'} ${platformInfo?.name || link.platform}`}
                     checked={link.enabled}
                     onCheckedChange={() => handleToggle(link.platform)}
                     className="scale-75"
                   />
                 </div>
                 <Input
+                  aria-label={`Usuario o dirección de ${platformInfo?.name || link.platform}`}
                   type="text"
                   placeholder={platformInfo?.placeholder}
                   value={link.username}

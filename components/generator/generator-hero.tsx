@@ -25,7 +25,7 @@ export function GeneratorHero() {
           Genera perfiles README impresionantes automáticamente usando la{' '}
           <span className="text-primary font-medium">GitHub REST & GraphQL API</span>.
           <br className="hidden md:block" />
-          Múltiples plantillas profesionales. Descarga tu README listo para usar.
+          Múltiples plantillas profesionales. Descarga un ZIP listo para instalar.
         </p>
       </header>
 

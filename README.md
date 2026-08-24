@@ -33,16 +33,18 @@ La única comunicación de red realizada por el producto es con `https://api.git
 ### Contenido de la descarga
 
 ```text
-gitmorphosis-<usuario>/
+<usuario>-readme.zip
 ├── README.md
 ├── INSTALACION.md
 └── assets/
-    ├── header.svg
-    ├── stats.svg
-    └── ...
+    ├── stats-dark.svg
+    ├── stats-light.svg
+    ├── languages-dark.svg
+    ├── languages-light.svg
+    └── ... según la plantilla elegida
 ```
 
-`INSTALACION.md` repite las instrucciones dentro del propio paquete. GitHub necesita que el repositorio del perfil sea público y que su nombre coincida, respetando mayúsculas y minúsculas, con el usuario.
+`INSTALACION.md` repite las instrucciones dentro del propio paquete. GitHub necesita que el repositorio del perfil sea público y que su nombre coincida con el usuario.
 
 ### Token y límites de GitHub
 

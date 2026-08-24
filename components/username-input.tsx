@@ -52,7 +52,7 @@ export function UsernameInput({ onSubmit, isLoading = false }: UsernameInputProp
       <div className="flex flex-col gap-3">
         <div className="relative group">
           <div className="absolute inset-0 bg-primary/20 rounded-lg blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-          <div className="relative flex gap-2">
+          <div className="relative flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
               <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -70,7 +70,7 @@ export function UsernameInput({ onSubmit, isLoading = false }: UsernameInputProp
             <Button 
               type="submit" 
               disabled={isLoading || !username.trim()}
-              className="h-12 px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all glow-primary disabled:opacity-50"
+              className="h-12 w-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all glow-primary disabled:opacity-50 sm:w-auto"
             >
               {isLoading ? (
                 <>

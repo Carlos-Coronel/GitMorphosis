@@ -60,7 +60,6 @@ export function ProfileStats({ user, topLanguages }: ProfileStatsProps) {
                 alt={`Avatar de ${user.username}`}
                 className="relative h-20 w-20 rounded-full ring-4 ring-card object-cover"
               />
-              <div className="absolute bottom-0 right-0 h-5 w-5 rounded-full bg-green-500 ring-2 ring-card" />
             </div>
           )}
           

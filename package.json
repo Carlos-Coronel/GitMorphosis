@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22"
   },
-  "description": "Generate stunning GitHub profile READMEs automatically — no API key needed",
+  "description": "Generador autocontenido de README para perfiles de GitHub",
   "author": "Carlos Coronel",
   "license": "MIT",
   "homepage": "https://github.com/Carlos-Coronel/GitMorphosis",

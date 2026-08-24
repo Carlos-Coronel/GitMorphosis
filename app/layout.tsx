@@ -2,19 +2,19 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'GitHub Profile Generator | Auto-generate stunning README profiles',
-  description: 'Generate professional GitHub README profiles automatically using the official GitHub API. No API key required. Multiple templates available.',
+  title: 'GitMorphosis | Generador autocontenido de perfiles GitHub',
+  description: 'Crea un README profesional para tu perfil con la API oficial de GitHub y gráficos SVG locales. Sin backend ni servicios de tarjetas externos.',
   keywords: ['GitHub', 'README', 'profile', 'generator', 'developer', 'portfolio'],
-  authors: [{ name: 'GitHub Profile Generator' }],
+  authors: [{ name: 'GitMorphosis' }],
   openGraph: {
-    title: 'GitHub Profile Generator',
-    description: 'Generate professional GitHub README profiles automatically',
+    title: 'GitMorphosis',
+    description: 'Generador autocontenido de README para perfiles de GitHub',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GitHub Profile Generator',
-    description: 'Generate professional GitHub README profiles automatically',
+    title: 'GitMorphosis',
+    description: 'Generador autocontenido de README para perfiles de GitHub',
   },
   icons: {
     icon: [
