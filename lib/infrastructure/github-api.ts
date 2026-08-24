@@ -127,7 +127,12 @@ async function ghFetch<T>(path: string, token?: string | null): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${GH_API}${path}`, { headers });
+  let res: Response;
+  try {
+    res = await fetch(`${GH_API}${path}`, { headers });
+  } catch {
+    throw new Error('No se pudo conectar con GitHub. Comprueba tu conexión e inténtalo de nuevo en unos minutos.');
+  }
 
   if (res.status === 404) {
     throw new Error(`Perfil de GitHub no encontrado`);
@@ -166,14 +171,19 @@ async function ghFetch<T>(path: string, token?: string | null): Promise<T> {
 }
 
 async function ghGraphQL<T = GQLPinnedReposResponse>(query: string, variables: Record<string, unknown>, token: string): Promise<T> {
-  const res = await fetch(GH_GRAPHQL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(GH_GRAPHQL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con GitHub GraphQL. Inténtalo de nuevo en unos minutos.');
+  }
 
   if (!res.ok) {
     throw new Error(`GraphQL request failed: ${res.status}`);

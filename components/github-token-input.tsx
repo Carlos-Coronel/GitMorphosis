@@ -79,9 +79,9 @@ export function GitHubTokenInput({ onTokenChange }: GitHubTokenInputProps) {
       </div>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
-        Sin token: <span className="text-foreground font-medium">60 requests/hora</span>. Con token:{' '}
-        <span className="text-emerald-600 font-medium">5,000 requests/hora</span> + repos
-        fijados reales via GraphQL. El token solo se guarda en la sesión del navegador.
+        Sin token: <span className="text-foreground font-medium">60 solicitudes/hora</span>. Con token:{' '}
+        <span className="text-emerald-600 font-medium">5.000 solicitudes/hora</span> + repos
+        fijados reales vía GraphQL. El token solo se guarda en la sesión del navegador.
       </p>
 
       {/* Active token indicator */}
@@ -96,7 +96,7 @@ export function GitHubTokenInput({ onTokenChange }: GitHubTokenInputProps) {
               )}
               {status.remaining !== undefined && (
                 <span className="text-muted-foreground ml-1">
-                  · {status.remaining.toLocaleString()} requests restantes
+                  · {status.remaining.toLocaleString('es')} solicitudes restantes
                 </span>
               )}
             </div>
@@ -135,6 +135,7 @@ export function GitHubTokenInput({ onTokenChange }: GitHubTokenInputProps) {
             <button
               type="button"
               onClick={() => setShowToken(!showToken)}
+              aria-label={showToken ? 'Ocultar token' : 'Mostrar token'}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
               {showToken ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -166,13 +167,13 @@ export function GitHubTokenInput({ onTokenChange }: GitHubTokenInputProps) {
       {/* Create token link */}
       {status.state !== 'valid' && (
         <a
-          href="https://github.com/settings/tokens/new?description=GitMorphosis&scopes=read%3Auser%2Cpublic_repo"
+          href="https://github.com/settings/tokens/new?description=GitMorphosis&scopes=read%3Auser"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
         >
           <ExternalLink className="h-3 w-3" />
-          Crear token en GitHub (scope: read:user, public_repo)
+          Crear token en GitHub (solo lectura: read:user)
         </a>
       )}
     </div>

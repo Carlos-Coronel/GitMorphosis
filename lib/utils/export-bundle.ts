@@ -11,7 +11,7 @@ export function safeBundleName(username: string): string {
 export function createReadmeBundle(result: Pick<GeneratedReadme, 'markdown' | 'assets'>): Uint8Array {
   const files: Record<string, Uint8Array> = {
     'README.md': encoder(result.markdown),
-    'INSTALACION.txt': encoder('GitMorphosis — paquete autocontenido\n\n1. Copia README.md y la carpeta assets/ a la raíz de tu repositorio de perfil.\n2. Confirma que ambas rutas se suban en el mismo commit.\n3. GitHub renderizará los SVG mediante rutas relativas, sin servicios gráficos externos.\n'),
+    'INSTALACION.md': encoder('# Instalar tu perfil generado con GitMorphosis\n\n1. Crea un repositorio público con el mismo nombre que tu usuario de GitHub.\n2. Copia `README.md` y la carpeta completa `assets/` a la raíz del repositorio.\n3. Conserva los nombres y las rutas de todos los SVG.\n4. Confirma `README.md` y `assets/` en el mismo commit.\n5. Abre tu perfil de GitHub y comprueba el resultado.\n\n> No copies únicamente el Markdown: sus imágenes usan rutas relativas a `assets/`.\n'),
   };
   for (const asset of result.assets) {
     if (!isSafeAsset(asset)) throw new Error(`Ruta de recurso no válida: ${asset.path}`);

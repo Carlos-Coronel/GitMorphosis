@@ -31,6 +31,11 @@ describe('cliente GitHub', () => {
     }
   });
 
+  it('traduce los errores de red a un mensaje útil', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchGitHubProfile('octocat')).rejects.toThrow('No se pudo conectar con GitHub');
+  });
+
   it('mantiene el token solo durante la sesión', () => {
     saveToken('secret'); expect(getStoredToken()).toBe('secret'); clearToken(); expect(getStoredToken()).toBeNull();
   });

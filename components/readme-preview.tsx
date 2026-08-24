@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   Copy, 
   Check, 
@@ -40,6 +40,15 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
   const closeFullscreen = useCallback(() => {
     setIsFullscreen(false);
   }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeFullscreen();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen, closeFullscreen]);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -232,25 +241,23 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
     return htmlBlocks.join('\n');
   };
 
-  // Memoize the rendered HTML so it only recomputes when markdown or theme changes
+  // Renderiza la vista con la variante de tema seleccionada.
   const renderedHtml = renderMarkdown(markdown, previewTheme);
 
   // ── Content ──────────────────────────────────────────────────────────────
   const PreviewContent = () => (
-    <>
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full gap-0">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="preview" className="data-[state=active]:bg-card gap-2">
-              <Eye className="h-4 w-4" />
-              Vista Previa
-            </TabsTrigger>
-            <TabsTrigger value="code" className="data-[state=active]:bg-card gap-2">
-              <Code2 className="h-4 w-4" />
-              Markdown
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="preview" className="data-[state=active]:bg-card gap-2">
+            <Eye className="h-4 w-4" />
+            Vista Previa
+          </TabsTrigger>
+          <TabsTrigger value="code" className="data-[state=active]:bg-card gap-2">
+            <Code2 className="h-4 w-4" />
+            Markdown
+          </TabsTrigger>
+        </TabsList>
         
         <div className="flex gap-2 flex-wrap items-center">
           {/* ── Dark / Light preview toggle ── */}
@@ -364,9 +371,9 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
         {/* Header estilo Terminal */}
         <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-muted/70 to-muted/30 border-b border-border/50 backdrop-blur-sm">
           <div className="flex gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors cursor-pointer shadow-sm shadow-red-500/50" />
-            <div className="h-3 w-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer shadow-sm shadow-yellow-500/50" />
-            <div className="h-3 w-3 rounded-full bg-green-500/80 hover:bg-green-500 transition-colors cursor-pointer shadow-sm shadow-green-500/50" />
+            <div aria-hidden="true" className="h-3 w-3 rounded-full bg-red-500/80 shadow-sm shadow-red-500/50" />
+            <div aria-hidden="true" className="h-3 w-3 rounded-full bg-yellow-500/80 shadow-sm shadow-yellow-500/50" />
+            <div aria-hidden="true" className="h-3 w-3 rounded-full bg-green-500/80 shadow-sm shadow-green-500/50" />
           </div>
           <span className="text-xs text-muted-foreground font-mono ml-2 flex-1 tracking-wider">
             {username}-README.md
@@ -392,7 +399,6 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
           </div>
         </div>
 
-        <Tabs value={activeTab} className="w-full">
           <TabsContent value="preview" className="mt-0">
             {/* The preview area itself uses the previewTheme colours */}
             <div
@@ -426,9 +432,8 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
               </pre>
             </div>
           </TabsContent>
-        </Tabs>
       </div>
-    </>
+    </Tabs>
   );
 
   // Modal de pantalla completa
@@ -452,6 +457,7 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
                 variant="ghost"
                 size="icon"
                 onClick={closeFullscreen}
+                aria-label="Salir de pantalla completa"
                 className="h-10 w-10 rounded-full hover:bg-muted"
               >
                 <X className="h-5 w-5" />

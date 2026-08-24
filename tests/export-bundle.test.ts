@@ -9,7 +9,7 @@ describe('exportación ZIP', () => {
     const result = createReadmeBuilder().build(profileFixture, 'portfolio');
     const files = unzipSync(createReadmeBundle({ markdown: result.markdown, assets: result.assets }));
     expect(strFromU8(files['README.md'])).toBe(result.markdown);
-    expect(strFromU8(files['INSTALACION.txt'])).toContain('carpeta assets/');
+    expect(strFromU8(files['INSTALACION.md'])).toContain('carpeta completa `assets/`');
     expect(Object.keys(files).filter((path) => path.endsWith('.svg'))).toHaveLength(result.assets.length);
   });
 

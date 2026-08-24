@@ -42,7 +42,7 @@ const STEPS = [
     shortTitle: 'Opciones',
     description: 'Añade enlaces, activa el snake local o usa un token de sesión para obtener datos ampliados.',
     target: 'profile-settings',
-    action: 'Abrir opciones',
+    action: 'Ir a opciones',
     icon: Settings2,
   },
   {
@@ -95,7 +95,7 @@ export function ProfileGuide({ generatedUsername, assetCount }: ProfileGuideProp
           <ol className="grid grid-cols-2 gap-2 md:grid-cols-4" aria-label="Pasos de la guía">
             {STEPS.map((item, index) => {
               const Icon = item.icon;
-              const isComplete = generatedUsername ? index < 4 : index < activeStep;
+              const isComplete = generatedUsername ? index < 3 : index < activeStep;
               return (
                 <li key={item.shortTitle}>
                   <button
@@ -145,8 +145,13 @@ export function ProfileGuide({ generatedUsername, assetCount }: ProfileGuideProp
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Button type="button" size="sm" onClick={() => scrollToSection(step.target)}>
-                    {step.action}
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={activeStep === 3 && !generatedUsername}
+                    onClick={() => scrollToSection(step.target)}
+                  >
+                    {activeStep === 3 && !generatedUsername ? 'Genera primero tu perfil' : step.action}
                   </Button>
                   <Button
                     type="button"
