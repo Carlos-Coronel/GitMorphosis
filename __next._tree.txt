@@ -1,2 +1,3 @@
-:HL["/GitMorphosis/_next/static/chunks/0bni-ryrb_3_g.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"1Oo7DsPjFFpSBcErY3kql"}
+:HL["/GitMorphosis/_next/static/chunks/1wi4rt5683gwb.css","style"]
+:HC["/",""]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"uriGAthzrRL79TyQuZpI3"}
