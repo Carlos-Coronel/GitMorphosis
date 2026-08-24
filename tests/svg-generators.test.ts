@@ -35,4 +35,13 @@ describe('generadores SVG', () => {
     expect(languages).toContain('width="340" height="160"');
     expect(trophies).not.toMatch(/[⭐👥📁⌨️◆⑂]/u);
   });
+
+  it('usa la paleta accesible de GitHub en el tema claro', () => {
+    const stats = generateStatsCardSvg({ username: 'octocat', theme: 'flat' });
+    const project = generatePinCardSvg({ username: 'octocat', repo: 'hello', theme: 'flat' });
+    const trophies = generateTrophyCardSvg({ theme: 'flat', stats: { stars: 1, forks: 2, followers: 3, repos: 4, languages: 5, featured: 6 } });
+    expect(`${stats}${project}${trophies}`).toContain('#0969da');
+    expect(`${stats}${project}${trophies}`).not.toContain('#2f80ed');
+    expect(trophies).toContain('#bc4c00');
+  });
 });

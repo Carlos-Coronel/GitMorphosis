@@ -22,9 +22,9 @@ const THEMES: Record<string, TrophyTheme> = {
     emerald: '#73daca', sapphire: '#b4f9f8', amethyst: '#bb9af7'
   },
   flat: {
-    bg: '#ffffff', border: '#e4e2e2', title: '#2f80ed', text: '#434d58',
-    gold: '#f1c40f', silver: '#95a5a6', bronze: '#e67e22',
-    emerald: '#2ecc71', sapphire: '#3498db', amethyst: '#9b59b6'
+    bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f',
+    gold: '#9a6700', silver: '#57606a', bronze: '#bc4c00',
+    emerald: '#1a7f37', sapphire: '#0969da', amethyst: '#8250df'
   },
   dark: {
     bg: '#141321', border: '#2d2d2d', title: '#fe428e', text: '#a9fef7',
@@ -32,9 +32,9 @@ const THEMES: Record<string, TrophyTheme> = {
     emerald: '#73daca', sapphire: '#b4f9f8', amethyst: '#bb9af7'
   },
   default: {
-    bg: '#fffefe', border: '#e4e2e2', title: '#2f80ed', text: '#434d58',
-    gold: '#f1c40f', silver: '#95a5a6', bronze: '#e67e22',
-    emerald: '#2ecc71', sapphire: '#3498db', amethyst: '#9b59b6'
+    bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f',
+    gold: '#9a6700', silver: '#57606a', bronze: '#bc4c00',
+    emerald: '#1a7f37', sapphire: '#0969da', amethyst: '#8250df'
   },
 };
 

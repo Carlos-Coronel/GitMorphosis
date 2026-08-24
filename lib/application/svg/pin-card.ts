@@ -11,10 +11,10 @@ interface PinTheme {
 
 const THEMES: Record<string, PinTheme> = {
   tokyonight: { bg: '#1a1b27', border: '#38385a', title: '#70a5fd', text: '#cdd6f4', desc: '#8b949e', icon: '#70a5fd' },
-  flat:       { bg: '#ffffff', border: '#e4e2e2', title: '#2f80ed', text: '#24292f', desc: '#57606a', icon: '#4c71f2' },
+  flat:       { bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f', desc: '#57606a', icon: '#0969da' },
   dark:       { bg: '#141321', border: '#2d2d2d', title: '#fe428e', text: '#a9fef7', desc: '#8b949e', icon: '#fe428e' },
   'chartreuse-dark': { bg: '#0d1117', border: '#21262d', title: '#39d353', text: '#c9d1d9', desc: '#8b949e', icon: '#39d353' },
-  default:    { bg: '#fffefe', border: '#e4e2e2', title: '#2f80ed', text: '#24292f', desc: '#57606a', icon: '#4c71f2' },
+  default:    { bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f', desc: '#57606a', icon: '#0969da' },
 };
 
 export interface PinCardParams {

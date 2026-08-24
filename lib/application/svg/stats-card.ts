@@ -14,8 +14,8 @@ const THEMES: Record<string, StatsTheme> = {
     text: '#cdd6f4', icon: '#70a5fd', ring: '#70a5fd', fill: '#70a5fd',
   },
   flat: {
-    bg: '#ffffff', border: '#e4e2e2', title: '#2f80ed',
-    text: '#434d58', icon: '#4c71f2', ring: '#2f80ed', fill: '#2f80ed',
+    bg: '#ffffff', border: '#d0d7de', title: '#0969da',
+    text: '#24292f', icon: '#0969da', ring: '#0969da', fill: '#0969da',
   },
   dark: {
     bg: '#141321', border: '#2d2d2d', title: '#fe428e',
@@ -26,8 +26,8 @@ const THEMES: Record<string, StatsTheme> = {
     text: '#c9d1d9', icon: '#39d353', ring: '#39d353', fill: '#39d353',
   },
   default: {
-    bg: '#fffefe', border: '#e4e2e2', title: '#2f80ed',
-    text: '#434d58', icon: '#4c71f2', ring: '#2f80ed', fill: '#2f80ed',
+    bg: '#ffffff', border: '#d0d7de', title: '#0969da',
+    text: '#24292f', icon: '#0969da', ring: '#0969da', fill: '#0969da',
   },
 };
 

@@ -11,10 +11,10 @@ interface LangsTheme {
 
 const THEMES: Record<string, LangsTheme> = {
   tokyonight: { bg: '#1a1b27', border: '#38385a', title: '#70a5fd', text: '#cdd6f4' },
-  flat:       { bg: '#ffffff', border: '#e4e2e2', title: '#2f80ed', text: '#434d58' },
+  flat:       { bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f' },
   dark:       { bg: '#141321', border: '#2d2d2d', title: '#fe428e', text: '#a9fef7' },
   'chartreuse-dark': { bg: '#0d1117', border: '#21262d', title: '#39d353', text: '#c9d1d9' },
-  default:    { bg: '#fffefe', border: '#e4e2e2', title: '#2f80ed', text: '#434d58' },
+  default:    { bg: '#ffffff', border: '#d0d7de', title: '#0969da', text: '#24292f' },
 };
 
 export interface TopLangsParams {
