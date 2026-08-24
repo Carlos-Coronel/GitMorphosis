@@ -21,6 +21,7 @@ describe('renderReadmePreview', () => {
   it('selecciona las variantes oscura y móvil que seleccionaría GitHub', () => {
     const html = renderReadmePreview(adaptive, 'dark', assets);
     expect(html).toContain('media="(max-width: 480px)"');
+    expect(html).toContain('<themed-picture data-catalyst-inline="true">');
     expect(decodeURIComponent(html)).toContain('desktop dark');
     expect(decodeURIComponent(html)).toContain('mobile dark');
     expect(decodeURIComponent(html)).not.toContain('desktop light');
@@ -40,6 +41,7 @@ describe('renderReadmePreview', () => {
     expect(html).toContain('<div align="center"><h1>Profile</h1>');
     expect(html).toContain('<h2>Stats</h2>');
     expect(html).toContain('<pre><code class="language-text">$ whoami');
+    expect(html).toContain('<div class="github-plain-code"><pre>');
     expect(html).toContain('<a href="https://github.com">GitHub</a>');
   });
 });

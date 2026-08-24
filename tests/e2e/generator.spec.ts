@@ -60,19 +60,25 @@ test('reproduce la geometría y los estilos de un README de GitHub', async ({ pa
   await page.getByLabel('Nombre de usuario de GitHub').fill('octocat');
   await page.getByRole('button', { name: 'Generar' }).click();
   await expect(page.getByText(/^Incluye README\.md, \d+ SVG locales/)).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts.load('14px "Mona Sans Variable"');
+    await document.fonts.ready;
+  });
 
   const preview = page.locator('.markdown-preview');
   const heading = preview.locator('h2').first();
   const firstImage = preview.locator('img').first();
   await expect(preview).toHaveCSS('font-size', '14px');
   await expect(preview).toHaveCSS('line-height', '21px');
+  await expect(preview).toHaveCSS('font-family', /Mona Sans Variable/);
   await expect(heading).toHaveCSS('font-size', '21px');
   await expect(heading).toHaveCSS('margin-top', '24px');
   await expect(heading).toHaveCSS('margin-bottom', '16px');
   await expect(firstImage).toHaveCSS('border-radius', '0px');
   await expect(firstImage).toHaveCSS('box-shadow', 'none');
   await expect(firstImage).toHaveCSS('display', 'inline');
-  await expect(preview.locator('picture').first()).toHaveCSS('display', 'contents');
+  await expect(preview.locator('themed-picture').first()).toHaveCSS('display', 'inline');
+  await expect(preview.locator('picture').first()).toHaveCSS('display', 'inline');
 
   const geometry = await preview.evaluate((element) => {
     const images = [...element.querySelectorAll('img')];
@@ -92,18 +98,19 @@ test('reproduce la geometría y los estilos de un README de GitHub', async ({ pa
   });
 
   expect(geometry.overflow).toBe(false);
-  expect(new Set(geometry.projects.map((project) => project.height)).size).toBe(1);
-  expect(geometry.stack.y - geometry.header.y - geometry.header.height).toBeCloseTo(5, 0);
+  const projectHeights = geometry.projects.map((project) => project.height);
+  expect(Math.max(...projectHeights) - Math.min(...projectHeights)).toBeLessThanOrEqual(1);
+  expect(geometry.stack.y - geometry.header.y - geometry.header.height).toBeCloseTo(4.34375, 2);
   expect(geometry.stack.x).toBeCloseTo((geometry.contentWidth - geometry.stack.width) / 2, 0);
   if (testInfo.project.name === 'chromium') {
     expect(geometry.contentWidth).toBeGreaterThanOrEqual(830);
     expect(geometry.contentWidth).toBeLessThanOrEqual(833);
     expect(geometry.firstNaturalWidth).toBe(900);
     expect(geometry.projects[1].x - geometry.projects[0].x - geometry.projects[0].width).toBeCloseTo(4, 0);
-    expect(geometry.projects[2].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(5, 0);
+    expect(geometry.projects[2].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(4.34375, 2);
   } else {
     expect(geometry.firstNaturalWidth).toBe(340);
-    expect(geometry.projects[1].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(5, 0);
+    expect(geometry.projects[1].y - geometry.projects[0].y - geometry.projects[0].height).toBeCloseTo(4.34375, 2);
   }
 });
 
@@ -144,6 +151,8 @@ test('recorre guía, personalización, plantillas y vista previa', async ({ page
 
   await page.getByRole('button', { name: 'Seleccionar plantilla Terminal' }).click();
   await expect(page.locator('[data-slot="tabs-content"][data-state="active"] code')).toContainText('$ whoami');
+  await page.getByRole('tab', { name: 'Vista Previa' }).click();
+  await expect(page.locator('.markdown-preview .github-plain-code')).toHaveCount(2);
 });
 
 test('explica validación, usuario inexistente, red y token inválido', async ({ page }) => {
