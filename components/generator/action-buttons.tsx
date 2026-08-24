@@ -4,11 +4,11 @@ import { useState, useCallback } from 'react';
 import { Rocket, Download, CheckCircle2, ExternalLink, Github, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStoredToken } from '@/lib/infrastructure/github-api';
-import { type GenerateResult } from '@/lib/domain/types';
+import { type GeneratedReadme } from '@/lib/domain/types';
 import { downloadReadmeBundle } from '@/lib/utils/export-bundle';
 
 interface ActionButtonsProps {
-  result: GenerateResult;
+  result: GeneratedReadme;
 }
 
 export function ActionButtons({ result }: ActionButtonsProps) {
@@ -87,18 +87,18 @@ export function ActionButtons({ result }: ActionButtonsProps) {
       </div>
 
       {/* Pinned repos info */}
-      {result.profile.pinnedCount > 0 && (
+      {result.profile.pinnedRepos.length > 0 && (
         <div className="pt-2 border-t border-border/40">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             {getStoredToken() ? (
               <>
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                {result.profile.pinnedCount} repos fijados reales (GraphQL)
+                {result.profile.pinnedRepos.length} repos fijados reales (GraphQL)
               </>
             ) : (
               <>
                 <AlertCircle className="h-3 w-3 text-amber-500" />
-                {result.profile.pinnedCount} repos más populares (sin token)
+                {result.profile.pinnedRepos.length} repos más populares (sin token)
               </>
             )}
           </p>

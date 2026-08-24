@@ -29,8 +29,6 @@ export interface Repository {
   forks: number;
   url: string;
   isForked: boolean;
-  updatedAt: string | null;
-  topics: string[];
 }
 
 export interface LanguageStats {
@@ -39,36 +37,11 @@ export interface LanguageStats {
   color: string;
 }
 
-export interface ProjectAnalysis {
-  repositoryName: string;
-  technologies: string[];
-  frameworks: string[];
-  hasTests: boolean;
-  hasCI: boolean;
-  hasDocker: boolean;
-  hasDocumentation: boolean;
-  projectType: ProjectType;
-  fileTypes: Record<string, number>;
-}
-
-export type ProjectType = 
-  | 'web-frontend'
-  | 'web-backend'
-  | 'fullstack'
-  | 'mobile'
-  | 'library'
-  | 'cli'
-  | 'api'
-  | 'data-science'
-  | 'devops'
-  | 'unknown';
-
 export interface GitHubProfile {
   user: GitHubUser;
   repositories: Repository[];
   topLanguages: LanguageStats[];
   pinnedRepos: Repository[];
-  projectAnalyses: ProjectAnalysis[];
   contributionStats: ContributionStats;
 }
 
@@ -83,7 +56,6 @@ export interface Template {
   id: string;
   name: string;
   description: string;
-  preview?: string;
 }
 
 export interface GeneratedReadme {
@@ -98,35 +70,6 @@ export interface GeneratedAsset {
   path: `assets/${string}`;
   content: string;
   mimeType: 'image/svg+xml' | 'text/plain';
-}
-
-// Tipos de error para mejor manejo de errores
-export class ScrapingError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode?: number,
-    public readonly url?: string
-  ) {
-    super(message);
-    this.name = 'ScrapingError';
-  }
-}
-
-export class GitAnalysisError extends Error {
-  constructor(
-    message: string,
-    public readonly repository?: string
-  ) {
-    super(message);
-    this.name = 'GitAnalysisError';
-  }
-}
-
-export class ProfileNotFoundError extends Error {
-  constructor(username: string) {
-    super(`Perfil de GitHub no encontrado: ${username}`);
-    this.name = 'ProfileNotFoundError';
-  }
 }
 
 // Mapeo de colores para insignias por lenguaje
@@ -163,78 +106,10 @@ export const LANGUAGE_COLORS: Record<string, string> = {
   Zig: '#ec915c',
 };
 
-// Patrones de detección de tecnologías
-export const TECH_PATTERNS: Record<string, string[]> = {
-  React: ['package.json:react', 'jsx', 'tsx'],
-  Vue: ['package.json:vue', '.vue'],
-  Angular: ['package.json:@angular', 'angular.json'],
-  Svelte: ['package.json:svelte', '.svelte'],
-  'Next.js': ['package.json:next', 'next.config'],
-  'Nuxt.js': ['package.json:nuxt', 'nuxt.config'],
-  Express: ['package.json:express'],
-  Fastify: ['package.json:fastify'],
-  NestJS: ['package.json:@nestjs'],
-  Django: ['requirements.txt:django', 'manage.py'],
-  Flask: ['requirements.txt:flask'],
-  FastAPI: ['requirements.txt:fastapi'],
-  'Spring Boot': ['pom.xml:spring-boot', 'build.gradle:spring-boot'],
-  Rails: ['Gemfile:rails'],
-  Laravel: ['composer.json:laravel'],
-  Docker: ['Dockerfile', 'docker-compose'],
-  Kubernetes: ['k8s/', '.yaml:kind:'],
-  Terraform: ['.tf'],
-  'GitHub Actions': ['.github/workflows'],
-  Jest: ['package.json:jest'],
-  Pytest: ['pytest.ini', 'requirements.txt:pytest'],
-  PostgreSQL: ['package.json:pg', 'requirements.txt:psycopg'],
-  MongoDB: ['package.json:mongoose', 'package.json:mongodb'],
-  Redis: ['package.json:redis', 'requirements.txt:redis'],
-  GraphQL: ['package.json:graphql', '.graphql'],
-  Prisma: ['prisma/schema.prisma'],
-  Tailwind: ['tailwind.config'],
-};
-
-export interface ProfileData {
-  user: {
-    username: string;
-    name: string | null;
-    bio: string | null;
-    avatarUrl: string | null;
-    location: string | null;
-    company: string | null;
-    blog: string | null;
-    twitterUsername?: string | null;
-    socialLinks?: {
-      platform: string;
-      url: string;
-      username: string;
-    }[];
-    followers: number;
-    following: number;
-    publicRepos: number;
-  };
-  topLanguages: {
-    language: string;
-    percentage: number;
-    color: string;
-  }[];
-  repositoryCount: number;
-  pinnedCount: number;
-}
-
-export interface GenerateResult {
-  markdown: string;
-  templateId: string;
-  generatedAt: string;
-  profile: ProfileData;
-  assets: GeneratedAsset[];
-}
-
 export interface SocialLink {
   platform: string;
   url: string;
   username: string;
-  icon: string;
   color: string;
   enabled: boolean;
 }

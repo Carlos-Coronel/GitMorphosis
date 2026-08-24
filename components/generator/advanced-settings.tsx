@@ -9,10 +9,10 @@ import { GitHubTokenInput } from '@/components/github-token-input';
 import { SocialLinksEditor } from '@/components/social-links-editor';
 import { getStoredToken } from '@/lib/infrastructure/github-api';
 import { cn } from '@/lib/utils';
-import { type GenerateResult, type GeneratorConfig } from '@/lib/domain/types';
+import { type GeneratedReadme, type GeneratorConfig } from '@/lib/domain/types';
 
 interface AdvancedSettingsProps {
-  result: GenerateResult | null;
+  result: GeneratedReadme | null;
   config: GeneratorConfig;
   onTokenChange: (token: string | null) => void;
   updateConfig: (newConfig: Partial<GeneratorConfig>) => void;

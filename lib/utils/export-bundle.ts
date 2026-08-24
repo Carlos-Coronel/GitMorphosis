@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
-import type { GenerateResult, GeneratedAsset } from '@/lib/domain/types';
+import type { GeneratedReadme, GeneratedAsset } from '@/lib/domain/types';
 
 const encoder = (value: string) => strToU8(value);
 
@@ -8,7 +8,7 @@ export function safeBundleName(username: string): string {
   return `${safe || 'github-profile'}-readme.zip`;
 }
 
-export function createReadmeBundle(result: Pick<GenerateResult, 'markdown' | 'assets'>): Uint8Array {
+export function createReadmeBundle(result: Pick<GeneratedReadme, 'markdown' | 'assets'>): Uint8Array {
   const files: Record<string, Uint8Array> = {
     'README.md': encoder(result.markdown),
     'INSTALACION.txt': encoder('GitMorphosis — paquete autocontenido\n\n1. Copia README.md y la carpeta assets/ a la raíz de tu repositorio de perfil.\n2. Confirma que ambas rutas se suban en el mismo commit.\n3. GitHub renderizará los SVG mediante rutas relativas, sin servicios gráficos externos.\n'),
@@ -24,7 +24,7 @@ function isSafeAsset(asset: GeneratedAsset): boolean {
   return /^assets\/[a-z0-9-]+\.svg$/.test(asset.path) && asset.mimeType === 'image/svg+xml' && asset.content.trimStart().startsWith('<svg');
 }
 
-export function downloadReadmeBundle(result: GenerateResult): void {
+export function downloadReadmeBundle(result: GeneratedReadme): void {
   const bytes = createReadmeBundle(result);
   const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/zip' });
   const url = URL.createObjectURL(blob);

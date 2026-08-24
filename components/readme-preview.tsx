@@ -117,6 +117,12 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
   // ── Core Markdown → HTML converter ──────────────────────────────────────────
   const renderMarkdown = (md: string, theme: 'dark' | 'light'): string => {
     const isDark = theme === 'dark';
+    const escapeHtml = (value: string) => value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
     const resolveUrl = (url: string): string => {
       const asset = assets.find((item) => item.path === url);
       if (!asset) return url;
@@ -168,7 +174,10 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
     const blocks = processed.trim().split(/\n\n+/);
     const htmlBlocks = blocks.map(block => {
       if (block.startsWith('```')) {
-        return block.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+        return block.replace(
+          /```(\w+)?\n([\s\S]*?)```/g,
+          (_match, _language, code) => `<pre><code>${escapeHtml(code)}</code></pre>`
+        );
       }
       if (block.startsWith('#')) {
         return block
@@ -225,10 +234,6 @@ export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmeP
 
   // Memoize the rendered HTML so it only recomputes when markdown or theme changes
   const renderedHtml = renderMarkdown(markdown, previewTheme);
-
-  // ── Preview background & text color per theme ────────────────────────────
-  const previewBg  = previewTheme === 'dark'  ? 'bg-[#0d1117]' : 'bg-[#ffffff]';
-  const previewText = previewTheme === 'dark' ? 'text-[#c9d1d9]' : 'text-[#24292f]';
 
   // ── Content ──────────────────────────────────────────────────────────────
   const PreviewContent = () => (

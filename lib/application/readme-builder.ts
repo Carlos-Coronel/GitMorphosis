@@ -3,19 +3,34 @@ import { createLocalAssets } from './local-assets';
 
 export interface ReadmeOptions { includeSnake?: boolean; }
 
-function text(value: unknown): string { return String(value ?? '').replace(/[<>]/g, '').trim(); }
+function text(value: unknown): string {
+  return String(value ?? '').replace(/[<>]/g, '').trim();
+}
+
+function attribute(value: unknown): string {
+  return text(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+function safeUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? url.toString() : '#';
+  } catch {
+    return '#';
+  }
+}
 
 function adaptive(name: string, alt: string): string {
-  return `<picture>\n  <source media="(prefers-color-scheme: dark)" srcset="assets/${name}-dark.svg">\n  <source media="(prefers-color-scheme: light)" srcset="assets/${name}-light.svg">\n  <img alt="${text(alt)}" src="assets/${name}-dark.svg">\n</picture>`;
+  return `<picture>\n  <source media="(prefers-color-scheme: dark)" srcset="assets/${name}-dark.svg">\n  <source media="(prefers-color-scheme: light)" srcset="assets/${name}-light.svg">\n  <img alt="${attribute(alt)}" src="assets/${name}-dark.svg">\n</picture>`;
 }
 
 function links(profile: GitHubProfile): string {
   const { user } = profile;
-  const entries = [{ label: 'GitHub', url: user.profileUrl }];
-  if (user.socialLinks?.length) entries.push(...user.socialLinks.map((link) => ({ label: text(link.platform), url: link.url })));
+  const entries = [{ label: 'GitHub', url: safeUrl(user.profileUrl) }];
+  if (user.socialLinks?.length) entries.push(...user.socialLinks.map((link) => ({ label: text(link.platform), url: safeUrl(link.url) })));
   else {
-    if (user.twitterUsername) entries.push({ label: 'Twitter', url: `https://twitter.com/${user.twitterUsername}` });
-    if (user.blog) entries.push({ label: 'Website', url: user.blog });
+    if (user.twitterUsername) entries.push({ label: 'Twitter', url: safeUrl(`https://twitter.com/${user.twitterUsername}`) });
+    if (user.blog) entries.push({ label: 'Website', url: safeUrl(user.blog) });
   }
   return entries.map(({ label, url }) => `[${label}](${url})`).join(' · ');
 }
@@ -23,8 +38,8 @@ function links(profile: GitHubProfile): string {
 function projects(profile: GitHubProfile, cards = false): string {
   const repos = (profile.pinnedRepos.length ? profile.pinnedRepos : profile.repositories.filter((repo) => !repo.isForked)).slice(0, 4);
   if (!repos.length) return '';
-  if (cards) return repos.map((repo, index) => `[${adaptive(`project-${index + 1}`, repo.name)}](${repo.url})`).join('\n\n');
-  return repos.map((repo) => `### [${text(repo.name)}](${repo.url})\n${text(repo.description || 'Proyecto destacado')}\n\n⭐ ${repo.stars} · 🍴 ${repo.forks}${repo.language ? ` · ${text(repo.language)}` : ''}`).join('\n\n');
+  if (cards) return repos.map((repo, index) => `[${adaptive(`project-${index + 1}`, repo.name)}](${safeUrl(repo.url)})`).join('\n\n');
+  return repos.map((repo) => `### [${text(repo.name)}](${safeUrl(repo.url)})\n${text(repo.description || 'Proyecto destacado')}\n\n⭐ ${repo.stars} · 🍴 ${repo.forks}${repo.language ? ` · ${text(repo.language)}` : ''}`).join('\n\n');
 }
 
 function snake(options?: ReadmeOptions): string { return options?.includeSnake ? `\n\n## Contribution Snake\n\n${adaptive('snake', 'Contribution snake')}` : ''; }
@@ -36,15 +51,15 @@ export interface IReadmeStrategy {
   generate(profile: GitHubProfile, options?: ReadmeOptions): string;
 }
 
-export class MinimalistStrategy implements IReadmeStrategy {
+class MinimalistStrategy implements IReadmeStrategy {
   id = 'minimalist'; name = 'Minimalista'; description = 'Perfil limpio y simple con información esencial';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
-    return `# Hi, I'm ${text(user.name || user.username)} 👋\n\n${user.bio ? `> ${text(user.bio)}\n\n` : ''}## About me\n\n${user.location ? `📍 ${text(user.location)}  \n` : ''}${user.company ? `💼 ${text(user.company)}  \n` : ''}${user.blog ? `🌐 [Website](${user.blog})  \n` : ''}\n## GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n## Top languages\n\n${adaptive('languages', 'Top languages')}\n\n## Featured projects\n\n${projects(profile)}${snake(options)}\n\n---\n\n${links(profile)}\n`;
+    return `# Hi, I'm ${text(user.name || user.username)} 👋\n\n${user.bio ? `> ${text(user.bio)}\n\n` : ''}## About me\n\n${user.location ? `📍 ${text(user.location)}  \n` : ''}${user.company ? `💼 ${text(user.company)}  \n` : ''}${user.blog ? `🌐 [Website](${safeUrl(user.blog)})  \n` : ''}\n## GitHub stats\n\n${adaptive('stats', 'GitHub stats')}\n\n## Top languages\n\n${adaptive('languages', 'Top languages')}\n\n## Featured projects\n\n${projects(profile)}${snake(options)}\n\n---\n\n${links(profile)}\n`;
   }
 }
 
-export class PortfolioStrategy implements IReadmeStrategy {
+class PortfolioStrategy implements IReadmeStrategy {
   id = 'portfolio'; name = 'Portafolio Desarrollador'; description = 'Portafolio profesional con habilidades y proyectos destacados';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
@@ -52,7 +67,7 @@ export class PortfolioStrategy implements IReadmeStrategy {
   }
 }
 
-export class CreativeStrategy implements IReadmeStrategy {
+class CreativeStrategy implements IReadmeStrategy {
   id = 'creative'; name = 'Creativa'; description = 'Diseño visual con recursos SVG locales';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
@@ -60,7 +75,7 @@ export class CreativeStrategy implements IReadmeStrategy {
   }
 }
 
-export class TerminalStrategy implements IReadmeStrategy {
+class TerminalStrategy implements IReadmeStrategy {
   id = 'terminal'; name = 'Terminal'; description = 'Estética de terminal con fuentes monoespaciadas';
   generate(profile: GitHubProfile, options?: ReadmeOptions): string {
     const { user } = profile;
@@ -77,7 +92,9 @@ export class ReadmeBuilder {
   build(profile: GitHubProfile, templateId = 'portfolio', options?: ReadmeOptions): GeneratedReadme {
     const strategy = this.strategies.get(templateId);
     if (!strategy) throw new Error(`Plantilla no encontrada: ${templateId}`);
-    return { markdown: strategy.generate(profile, options), templateId, generatedAt: new Date(), profile, assets: createLocalAssets(profile, options?.includeSnake) };
+    const markdown = strategy.generate(profile, options);
+    const assets = createLocalAssets(profile, markdown, options?.includeSnake);
+    return { markdown, templateId, generatedAt: new Date(), profile, assets };
   }
 }
 

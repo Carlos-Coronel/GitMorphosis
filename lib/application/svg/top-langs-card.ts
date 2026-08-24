@@ -1,5 +1,5 @@
 /**
- * lib/client/svg/top-langs-card.ts
+ * Generador puro de la tarjeta de lenguajes.
  * Generates a top languages card SVG entirely client-side.
  */
 
@@ -18,7 +18,6 @@ const THEMES: Record<string, LangsTheme> = {
 };
 
 export interface TopLangsParams {
-  username: string;
   languages: LanguageStats[];
   theme?: string;
   hideBorder?: boolean;
@@ -28,7 +27,7 @@ export interface TopLangsParams {
 
 export function generateTopLangsCardSvg(params: TopLangsParams): string {
   const {
-    username, languages, theme = 'tokyonight',
+    languages, theme = 'tokyonight',
     hideBorder = false, layout = 'normal', langCount = 8,
   } = params;
 
@@ -102,9 +101,4 @@ export function generateTopLangsCardSvg(params: TopLangsParams): string {
   <line x1="25" y1="36" x2="${W - 25}" y2="36" stroke="${t.border}" stroke-width="0.5"/>
   ${items}
 </svg>`;
-}
-
-export function topLangsDataUri(params: TopLangsParams): string {
-  const svg = generateTopLangsCardSvg(params);
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

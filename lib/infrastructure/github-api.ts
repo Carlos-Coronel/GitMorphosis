@@ -1,5 +1,5 @@
 /**
- * lib/client/github-api.ts
+ * Cliente de infraestructura para GitHub REST y GraphQL.
  *
  * Client-side GitHub REST + GraphQL API client.
  * Runs entirely in the browser — no server required.
@@ -79,8 +79,6 @@ interface GHRepo {
   forks_count: number;
   html_url: string;
   fork: boolean;
-  updated_at: string;
-  topics: string[];
   archived: boolean;
   disabled: boolean;
   visibility: string;
@@ -106,10 +104,6 @@ interface GQLPinnedRepo {
   forkCount: number;
   url: string;
   isFork: boolean;
-  updatedAt: string;
-  repositoryTopics: {
-    nodes: { topic: { name: string } }[];
-  };
 }
 
 interface GQLPinnedReposResponse {
@@ -231,14 +225,6 @@ const PINNED_REPOS_QUERY = `
             forkCount
             url
             isFork
-            updatedAt
-            repositoryTopics(first: 10) {
-              nodes {
-                topic {
-                  name
-                }
-              }
-            }
           }
         }
       }
@@ -309,8 +295,6 @@ async function fetchPinnedRepos(username: string, token: string): Promise<Reposi
       forks: repo.forkCount,
       url: repo.url,
       isForked: repo.isFork,
-      updatedAt: repo.updatedAt,
-      topics: repo.repositoryTopics.nodes.map((n) => n.topic.name),
     }));
   } catch {
     // GraphQL is best-effort; REST fallback handles this
@@ -371,8 +355,6 @@ export async function fetchGitHubProfile(
       forks: r.forks_count,
       url: r.html_url,
       isForked: r.fork,
-      updatedAt: r.updated_at,
-      topics: r.topics ?? [],
     }));
 
   // ── Language stats ────────────────────────────────────────────────────────
@@ -406,7 +388,6 @@ export async function fetchGitHubProfile(
     repositories,
     topLanguages,
     pinnedRepos,
-    projectAnalyses: [],
     contributionStats,
   };
 }

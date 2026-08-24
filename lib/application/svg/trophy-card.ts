@@ -1,6 +1,5 @@
 /**
- * lib/client/svg/trophy-card.ts
- * Generates a GitHub trophies card SVG entirely client-side as a fallback for github-profile-trophy.
+ * Generador puro de la tarjeta de trofeos.
  */
 
 interface TrophyTheme {
@@ -39,15 +38,7 @@ const THEMES: Record<string, TrophyTheme> = {
   },
 };
 
-export interface Trophy {
-  label: string;
-  value: number;
-  rank: string;
-  color: string;
-}
-
 export interface TrophyCardParams {
-  username: string;
   theme?: string;
   stats: {
     stars: number;
@@ -70,7 +61,7 @@ function getRank(value: number, thresholds: number[]): { rank: string; colorKey:
 }
 
 export function generateTrophyCardSvg(params: TrophyCardParams): string {
-  const { username, theme = 'tokyonight', stats, hideBorder = false } = params;
+  const { theme = 'tokyonight', stats, hideBorder = false } = params;
   const t = THEMES[theme] ?? THEMES.tokyonight;
 
   const trophySpecs = [
@@ -109,9 +100,4 @@ export function generateTrophyCardSvg(params: TrophyCardParams): string {
   ${hideBorder ? '' : `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="none" stroke="${t.border}" stroke-width="1"/>`}
   ${trophySvgs}
 </svg>`;
-}
-
-export function trophyDataUri(params: TrophyCardParams): string {
-  const svg = generateTrophyCardSvg(params);
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

@@ -34,7 +34,7 @@ export function GeneratorHero() {
         {[
           { icon: Zap, title: 'GitHub REST API', desc: 'Datos precisos y actualizados', delay: 'stagger-1' },
           { icon: Shield, title: 'GraphQL para Pinned Repos', desc: 'Repos fijados reales con token PAT', delay: 'stagger-2' },
-          { icon: Sparkles, title: '4 Plantillas Pro', desc: 'Descarga como archivo .md', delay: 'stagger-3' },
+          { icon: Sparkles, title: '4 Plantillas Pro', desc: 'ZIP con README y recursos locales', delay: 'stagger-3' },
         ].map(({ icon: Icon, title, desc, delay }) => (
           <div
             key={title}

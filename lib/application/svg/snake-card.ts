@@ -1,5 +1,5 @@
 /**
- * lib/client/svg/snake-card.ts
+ * Generador puro del gráfico animado de contribuciones.
  *
  * Generates a beautiful animated contribution snake SVG entirely client-side.
  * No server required — runs in the browser.
@@ -254,9 +254,8 @@ export function generateSnakeSvg(params: SnakeCardParams): string {
 
   // Head start / end positions
   const [hc0, hr0] = snakePath[0];
-  const [hcN, hrN] = snakePath[totalCells - 1];
+  const [hcN] = snakePath[totalCells - 1];
   const hx0 = ptX(hc0), hy0 = ptY(hr0);
-  const hxN = ptX(hcN), hyN = ptY(hrN);
 
   // Motion path (for animateMotion)
   const motionD = `M ${snakePath.map(([c, r]) => `${ptX(c)} ${ptY(r)}`).join(' L ')}`;
@@ -429,10 +428,4 @@ export function generateSnakeSvg(params: SnakeCardParams): string {
   <!-- Legend: Less ◻◻◻◻◻ More -->
   ${buildLegend(svgW, svgH - LEGEND_H + 4, t)}
 </svg>`;
-}
-
-/** Returns a data: URI for use in img src */
-export function snakeDataUri(params: SnakeCardParams): string {
-  const svg = generateSnakeSvg(params);
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

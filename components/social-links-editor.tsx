@@ -21,18 +21,18 @@ import { type SocialLink } from '@/lib/domain/types';
 
 // Plataformas predefinidas
 const SOCIAL_PLATFORMS = [
-  { id: 'twitter', name: 'Twitter / X', icon: 'twitter', color: '#1DA1F2', placeholder: 'usuario' },
-  { id: 'linkedin', name: 'LinkedIn', icon: 'linkedin', color: '#0A66C2', placeholder: 'in/usuario' },
-  { id: 'instagram', name: 'Instagram', icon: 'instagram', color: '#E4405F', placeholder: 'usuario' },
-  { id: 'youtube', name: 'YouTube', icon: 'youtube', color: '#FF0000', placeholder: '@canal' },
-  { id: 'discord', name: 'Discord', icon: 'discord', color: '#5865F2', placeholder: 'usuario#0000' },
-  { id: 'twitch', name: 'Twitch', icon: 'twitch', color: '#9146FF', placeholder: 'canal' },
-  { id: 'dev', name: 'Dev.to', icon: 'dev-dot-to', color: '#0A0A0A', placeholder: 'usuario' },
-  { id: 'medium', name: 'Medium', icon: 'medium', color: '#000000', placeholder: '@usuario' },
-  { id: 'hashnode', name: 'Hashnode', icon: 'hashnode', color: '#2962FF', placeholder: '@usuario' },
-  { id: 'stackoverflow', name: 'Stack Overflow', icon: 'stackoverflow', color: '#F48024', placeholder: 'user/id' },
-  { id: 'email', name: 'Email', icon: 'gmail', color: '#EA4335', placeholder: 'correo@ejemplo.com' },
-  { id: 'website', name: 'Sitio Web', icon: 'google-chrome', color: '#4285F4', placeholder: 'https://mi-sitio.com' },
+  { id: 'twitter', name: 'Twitter / X', color: '#1DA1F2', placeholder: 'usuario' },
+  { id: 'linkedin', name: 'LinkedIn', color: '#0A66C2', placeholder: 'in/usuario' },
+  { id: 'instagram', name: 'Instagram', color: '#E4405F', placeholder: 'usuario' },
+  { id: 'youtube', name: 'YouTube', color: '#FF0000', placeholder: '@canal' },
+  { id: 'discord', name: 'Discord', color: '#5865F2', placeholder: 'usuario#0000' },
+  { id: 'twitch', name: 'Twitch', color: '#9146FF', placeholder: 'canal' },
+  { id: 'dev', name: 'Dev.to', color: '#0A0A0A', placeholder: 'usuario' },
+  { id: 'medium', name: 'Medium', color: '#000000', placeholder: '@usuario' },
+  { id: 'hashnode', name: 'Hashnode', color: '#2962FF', placeholder: '@usuario' },
+  { id: 'stackoverflow', name: 'Stack Overflow', color: '#F48024', placeholder: 'user/id' },
+  { id: 'email', name: 'Email', color: '#EA4335', placeholder: 'correo@ejemplo.com' },
+  { id: 'website', name: 'Sitio Web', color: '#4285F4', placeholder: 'https://mi-sitio.com' },
 ];
 
 function createDefaultLinks(
@@ -44,7 +44,6 @@ function createDefaultLinks(
     platform: platform.id,
     url: '',
     username: '',
-    icon: platform.icon,
     color: platform.color,
     enabled: false,
   }));

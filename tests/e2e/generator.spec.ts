@@ -21,7 +21,7 @@ test('genera y descarga un paquete autocontenido sin errores de consola', async 
   await page.getByLabel('Nombre de usuario de GitHub').fill('octocat');
   await page.getByRole('button', { name: 'Generar' }).click();
   await expect(page.getByText('Acciones')).toBeVisible();
-  await expect(page.getByText(/SVG locales/)).toBeVisible();
+  await expect(page.getByText(/^Incluye README\.md, \d+ SVG locales/)).toBeVisible();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Descargar ZIP completo' }).click();
   const download = await downloadPromise;

@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { fetchGitHubProfile, getStoredToken } from '@/lib/infrastructure/github-api';
 import { createReadmeBuilder } from '@/lib/application/readme-builder';
-import { GitHubProfile, GenerateResult, GeneratorConfig } from '@/lib/domain/types';
+import { GitHubProfile, GeneratedReadme, GeneratorConfig } from '@/lib/domain/types';
 
 export interface UseProfileGeneratorOptions {
   onGenerateSuccess?: () => void;
@@ -16,9 +16,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<GenerateResult | null>(null);
-  const [currentProfile, setCurrentProfile] = useState<GitHubProfile | null>(null);
-  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [result, setResult] = useState<GeneratedReadme | null>(null);
   const currentUsernameRef = useRef<string | null>(null);
 
   const [config, setConfig] = useState<GeneratorConfig>({
@@ -31,7 +29,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     socialLinks: [],
   });
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedTemplateRef = useRef('portfolio');
   const profileCacheRef = useRef<{ username: string; profile: GitHubProfile } | null>(null);
 
@@ -39,18 +37,21 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     setIsLoading(true);
     setError(null);
 
-    const currentConfig = activeConfig || configRef.current;
+    const isNewUsername = username !== currentUsernameRef.current;
+    const currentConfig = isNewUsername
+      ? { ...(activeConfig || configRef.current), socialLinks: [] }
+      : (activeConfig || configRef.current);
 
-    if (username !== currentUsernameRef.current) {
-      setConfig((prev) => {
-        const updated = { ...prev, socialLinks: [] };
-        configRef.current = updated;
-        return updated;
-      });
+    if (isNewUsername) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      setConfig(currentConfig);
+      configRef.current = currentConfig;
       profileCacheRef.current = null;
     }
 
-    setCurrentUsername(username);
     currentUsernameRef.current = username;
 
     try {
@@ -72,7 +73,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
 
       // ── Step 2: Merge social links ──────────────────────────────────────
       setLoadingStep('Procesando datos...');
-      const linksToUse = username !== currentUsernameRef.current ? [] : currentConfig.socialLinks;
+      const linksToUse = currentConfig.socialLinks;
       if (linksToUse.length > 0) {
         profile = {
           ...profile,
@@ -82,8 +83,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
           },
         };
       }
-      setCurrentProfile(profile);
-
       // ── Step 3: Generate README ─────────────────────────────────────────
       setLoadingStep('Generando README...');
       const builder = createReadmeBuilder();
@@ -92,18 +91,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
         includeSnake: currentConfig.includeSnake,
       });
 
-      setResult({
-        markdown: generatedResult.markdown,
-        templateId: generatedResult.templateId,
-        generatedAt: generatedResult.generatedAt.toISOString(),
-        profile: {
-          user: profile.user,
-          topLanguages: profile.topLanguages,
-          repositoryCount: profile.repositories.length,
-          pinnedCount: profile.pinnedRepos.length,
-        },
-        assets: generatedResult.assets,
-      });
+      setResult(generatedResult);
 
       // Refresh rate limit after API calls
       onGenerateSuccess?.();
@@ -149,7 +137,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     }
   }, [handleGenerate]);
 
-  const handleTokenChange = useCallback((token: string | null) => {
+  const handleTokenChange = useCallback(() => {
     profileCacheRef.current = null;
     onGenerateSuccess?.();
     if (currentUsernameRef.current && result) {
@@ -172,8 +160,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     loadingStep,
     error,
     result,
-    currentProfile,
-    currentUsername,
     config,
     updateConfig,
     handleGenerate,

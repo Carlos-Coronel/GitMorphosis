@@ -11,10 +11,13 @@ import { AdvancedSettings } from '@/components/generator/advanced-settings';
 import { ActionButtons } from '@/components/generator/action-buttons';
 import { LoadingState } from '@/components/generator/loading-state';
 import { EmptyState } from '@/components/generator/empty-state';
-import { DEFAULT_TEMPLATES, EXAMPLE_USERS } from '@/components/generator/constants';
+import { EXAMPLE_USERS } from '@/components/generator/constants';
+import { createReadmeBuilder } from '@/lib/application/readme-builder';
 import { Code2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+
+const README_TEMPLATES = createReadmeBuilder().getAvailableTemplates();
 
 export function ProfileGenerator() {
   const { rateLimit, refreshRateLimit } = useRateLimit();
@@ -64,7 +67,7 @@ export function ProfileGenerator() {
           )}
 
           <TemplateSelector
-            templates={DEFAULT_TEMPLATES}
+            templates={README_TEMPLATES}
             selectedId={selectedTemplate}
             onSelect={handleTemplateChange}
             disabled={isLoading}

@@ -1,5 +1,5 @@
 /**
- * lib/client/svg/pin-card.ts
+ * Generador puro de tarjetas de repositorio.
  * Generates a repository pin card SVG entirely client-side.
  */
 
@@ -104,9 +104,4 @@ export function generatePinCardSvg(params: PinCardParams): string {
   </g>
   <text x="${language ? 171 : 81}" y="${footerY + 4}" fill="${t.text}" font-size="11" font-family="'Segoe UI',Ubuntu,sans-serif">${forks}</text>
 </svg>`;
-}
-
-export function pinDataUri(params: PinCardParams): string {
-  const svg = generatePinCardSvg(params);
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

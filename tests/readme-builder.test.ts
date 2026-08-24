@@ -10,7 +10,8 @@ describe('motor autocontenido', () => {
     const result = createReadmeBuilder().build(profileFixture, template, { includeSnake: true });
     expect(result.markdown).toContain('assets/');
     expect(result.markdown).not.toMatch(forbidden);
-    expect(result.assets.length).toBeGreaterThan(20);
+    expect(result.assets.length).toBeGreaterThan(0);
+    expect(result.assets.every((asset) => result.markdown.includes(asset.path))).toBe(true);
     expect(result.assets.every((asset) => asset.content.startsWith('<svg'))).toBe(true);
     expect(result.assets.every((asset) => !forbidden.test(asset.content))).toBe(true);
   });
@@ -23,6 +24,17 @@ describe('motor autocontenido', () => {
     expect(escapeXml('<script>"x" & y</script>')).toBe('&lt;script&gt;&quot;x&quot; &amp; y&lt;/script&gt;');
     const malicious = structuredClone(profileFixture);
     malicious.repositories[0].description = '<script>alert(1)</script>';
-    expect(createLocalAssets(malicious).map((asset) => asset.content).join('')).not.toContain('<script>');
+    const markdown = createReadmeBuilder().build(malicious, 'portfolio').markdown;
+    expect(createLocalAssets(malicious, markdown).map((asset) => asset.content).join('')).not.toContain('<script>');
+  });
+
+  it('neutraliza atributos y protocolos peligrosos en Markdown', () => {
+    const malicious = structuredClone(profileFixture);
+    malicious.user.name = 'Octo" onerror="alert(1)';
+    malicious.user.socialLinks = [{ platform: 'Website', username: 'bad', url: 'javascript:alert(1)' }];
+    const result = createReadmeBuilder().build(malicious, 'creative');
+    expect(result.markdown).toContain('Octo&quot; onerror=&quot;alert(1)');
+    expect(result.markdown).not.toContain('javascript:');
+    expect(result.markdown).toContain('[Website](#)');
   });
 });

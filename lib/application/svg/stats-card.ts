@@ -1,5 +1,5 @@
 /**
- * lib/client/svg/stats-card.ts
+ * Generador puro de la tarjeta de estadísticas.
  * Generates a GitHub stats card SVG entirely client-side.
  */
 
@@ -42,17 +42,6 @@ export interface StatsCardParams {
   repos?: number;
   hideBorder?: boolean;
   showIcons?: boolean;
-}
-
-function icon(name: 'star' | 'commit' | 'pr' | 'issue' | 'fork', color: string): string {
-  const paths: Record<string, string> = {
-    star:   'M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z',
-    commit: 'M11.93 8.5a4.0015 4.0015 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.0015 4.0015 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z',
-    pr:     'M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z',
-    issue:  'M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0A6.5 6.5 0 0 0 1.5 8Z',
-    fork:   'M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z',
-  };
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="${color}"><path d="${paths[name]}"/></svg>`;
 }
 
 function svgIcon(name: 'star' | 'commit' | 'pr' | 'issue' | 'fork', x: number, y: number, color: string): string {
@@ -114,9 +103,4 @@ export function generateStatsCardSvg(params: StatsCardParams): string {
   <line x1="25" y1="40" x2="${W - 25}" y2="40" stroke="${t.border}" stroke-width="0.5" opacity="0.7"/>
   ${rows}
 </svg>`;
-}
-
-export function statsDataUri(params: StatsCardParams): string {
-  const svg = generateStatsCardSvg(params);
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

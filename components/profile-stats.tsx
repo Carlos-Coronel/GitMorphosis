@@ -1,6 +1,6 @@
 'use client';
 
-import { GitFork, Star, Users, FolderGit2, MapPin, Building2, Globe, Twitter, ExternalLink } from 'lucide-react';
+import { Users, FolderGit2, MapPin, Building2, Globe, Twitter, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProfileStatsProps {
