@@ -40,6 +40,46 @@ test('mantiene el flujo usable en viewport móvil', async ({ page }) => {
   await expect(page.locator('body')).not.toHaveCSS('overflow-x', 'scroll');
 });
 
+test('reproduce la geometría y los estilos de un README de GitHub', async ({ page }, testInfo) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Seleccionar plantilla Creativa' }).click();
+  await page.getByLabel('Nombre de usuario de GitHub').fill('octocat');
+  await page.getByRole('button', { name: 'Generar' }).click();
+  await expect(page.getByText(/^Incluye README\.md, \d+ SVG locales/)).toBeVisible();
+
+  const preview = page.locator('.markdown-preview');
+  const heading = preview.locator('h2').first();
+  const firstImage = preview.locator('img').first();
+  await expect(preview).toHaveCSS('font-size', '14px');
+  await expect(preview).toHaveCSS('line-height', '21px');
+  await expect(heading).toHaveCSS('font-size', '21px');
+  await expect(heading).toHaveCSS('margin-top', '24px');
+  await expect(heading).toHaveCSS('margin-bottom', '16px');
+  await expect(firstImage).toHaveCSS('border-radius', '0px');
+  await expect(firstImage).toHaveCSS('box-shadow', 'none');
+  await expect(preview.locator('picture').first()).toHaveCSS('display', 'contents');
+
+  const geometry = await preview.evaluate((element) => {
+    const images = [...element.querySelectorAll('img')];
+    return {
+      contentWidth: element.clientWidth - 48,
+      overflow: element.scrollWidth > element.clientWidth,
+      firstNaturalWidth: images[0]?.naturalWidth,
+      projectHeights: [...element.querySelectorAll(':scope > a img')].map((image) => image.getBoundingClientRect().height),
+    };
+  });
+
+  expect(geometry.overflow).toBe(false);
+  expect(new Set(geometry.projectHeights).size).toBe(1);
+  if (testInfo.project.name === 'chromium') {
+    expect(geometry.contentWidth).toBeGreaterThanOrEqual(830);
+    expect(geometry.contentWidth).toBeLessThanOrEqual(833);
+    expect(geometry.firstNaturalWidth).toBe(900);
+  } else {
+    expect(geometry.firstNaturalWidth).toBe(340);
+  }
+});
+
 test('recorre guía, personalización, plantillas y vista previa', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('./');
