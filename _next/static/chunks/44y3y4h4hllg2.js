@@ -129,7 +129,7 @@ ${rh("stack","Technology stack")}
 \`\`\`javascript
 const developer = {
   name: ${JSON.stringify(r.name||r.username)},
-  location: ${JSON.stringify(r.location||"Earth")},
+  location: ${JSON.stringify(r.location)},
   languages: ${JSON.stringify(e.topLanguages.slice(0,5).map(e=>e.language))},
   followers: ${r.followers},
   publicRepos: ${r.publicRepos}
@@ -159,8 +159,8 @@ ${rf(r.name||r.username)}
 
 $ cat profile.txt
 ${rf(r.bio||"Developer")}
-Location: ${rf(r.location||"Unknown")}
-Public repos: ${r.publicRepos}
+${r.location?`Location: ${rf(r.location)}
+`:""}Public repos: ${r.publicRepos}
 Followers: ${r.followers}
 
 $ ls skills/
