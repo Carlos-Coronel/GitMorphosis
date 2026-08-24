@@ -3,6 +3,9 @@ import nextConfig from "eslint-config-next";
 export default [
   ...nextConfig,
   {
+    ignores: [".e2e-site/**", "coverage/**", "playwright-report/**", "test-results/**"],
+  },
+  {
     rules: {
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/purity": "off",

@@ -15,15 +15,16 @@ export function UsernameInput({ onSubmit, isLoading = false }: UsernameInputProp
   const [error, setError] = useState<string | null>(null);
 
   const validateUsername = useCallback((value: string): boolean => {
-    if (!value.trim()) {
+    const cleanValue = value.trim();
+    if (!cleanValue) {
       setError('Por favor ingresa un nombre de usuario de GitHub');
       return false;
     }
-    if (value.length > 39) {
+    if (cleanValue.length > 39) {
       setError('El nombre de usuario es demasiado largo (máximo 39 caracteres)');
       return false;
     }
-    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(value)) {
+    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(cleanValue)) {
       setError('Formato de nombre de usuario inválido');
       return false;
     }
