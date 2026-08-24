@@ -9,7 +9,7 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: 'pnpm build:pages && node tools/prepare-e2e.mjs && pnpm exec serve .e2e-site -l 4173',
+    command: 'pnpm build:pages && node tools/prepare-e2e.mjs && node tools/serve-e2e.mjs',
     url: 'http://127.0.0.1:4173/GitMorphosis/', reuseExistingServer: false, timeout: 120_000,
   },
 });

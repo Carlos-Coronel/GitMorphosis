@@ -10,7 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8', reporter: ['text', 'json-summary'],
       include: ['lib/application/**/*.ts', 'lib/infrastructure/github-api.ts', 'lib/utils/export-bundle.ts'],
-      thresholds: { lines: 60, functions: 60, statements: 60, branches: 50 },
+      thresholds: { lines: 75, functions: 80, statements: 75, branches: 60 },
     },
   },
 });

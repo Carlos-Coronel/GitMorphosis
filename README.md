@@ -41,6 +41,7 @@ Comandos disponibles:
 
 ```bash
 pnpm lint           # ESLint sin advertencias
+pnpm dead-code      # archivos, exports y dependencias sin uso
 pnpm type-check     # TypeScript estricto
 pnpm test           # tests unitarios, integración y UI
 pnpm test:coverage  # tests con umbrales de cobertura
@@ -62,14 +63,16 @@ pnpm test:e2e
 - `lib/infrastructure/github-api.ts`: REST/GraphQL, token de sesión y tratamiento de límites y errores.
 - `lib/application/readme-builder.ts`: estrategias de las cuatro plantillas.
 - `lib/application/local-assets.ts`: manifiesto y composición de recursos SVG.
-- `lib/infrastructure/svg/`: generadores gráficos puros.
+- `lib/application/svg/`: generadores gráficos puros y deterministas.
 - `lib/utils/export-bundle.ts`: validación de rutas y empaquetado ZIP.
 - `hooks/use-profile-generator.ts`: orquestación del flujo cliente.
 
 El tipo `GeneratedReadme` contiene el Markdown y un manifiesto `assets` con `{ path, content, mimeType }`. Ninguna plantilla puede introducir hosts gráficos externos; las pruebas verifican esta condición.
 
+Las dependencias apuntan hacia el dominio: `application` contiene los casos de uso y renderizadores puros, mientras `infrastructure` se limita a GitHub. ESLint impide importaciones desde `application` hacia `infrastructure`. El catálogo de plantillas vive únicamente en el motor y la UI lo consulta, evitando configuraciones duplicadas.
+
 ## Calidad y despliegue
 
-La integración continua exige instalación congelada, lint, tipos, cobertura, build estático y E2E. El workflow de `main` solo publica el artefacto `out/` en GitHub Pages después de superar esas puertas. Los directorios `out/`, `.next/`, cobertura y resultados de Playwright nunca se versionan.
+La integración continua exige instalación congelada, lint, análisis de código muerto, tipos, cobertura, build estático y E2E. Los umbrales mínimos son 75% de líneas y sentencias, 80% de funciones y 60% de ramas. El workflow de `main` solo publica el artefacto `out/` en GitHub Pages después de superar esas puertas. Los directorios `out/`, `.next/`, cobertura y resultados de Playwright nunca se versionan.
 
 GitMorphosis se distribuye bajo la [licencia MIT](LICENSE).

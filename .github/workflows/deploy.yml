@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Dead code
+        run: pnpm dead-code
+
       - name: Type check
         run: pnpm type-check
 

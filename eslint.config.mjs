@@ -14,5 +14,16 @@ export default [
       "import/no-anonymous-default-export": "off",
       "@next/next/no-img-element": "off",
     }
+  },
+  {
+    files: ["lib/application/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [{
+          group: ["@/lib/infrastructure/*", "@/lib/infrastructure/**"],
+          message: "La capa application no debe depender de infrastructure. Invierte la dependencia mediante un puerto o mueve la lógica pura a application."
+        }]
+      }]
+    }
   }
 ];
