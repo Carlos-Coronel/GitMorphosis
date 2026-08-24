@@ -71,8 +71,7 @@ export function AdvancedSettings({
                   🐍 Incluir Contribution Snake
                 </Label>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Requiere configurar un <strong>GitHub Action</strong> en tu repo una sola vez.
-                  Si no lo has hecho, dejarlo desactivado evita imágenes rotas (404) en el README.
+                  Genera una animación SVG local y la incluye dentro del ZIP. No requiere Actions ni servicios externos.
                 </p>
               </div>
               <Switch

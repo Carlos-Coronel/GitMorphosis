@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { useTheme } from 'next-themes';
+import { useState, useCallback } from 'react';
 import { 
   Copy, 
-  Download, 
   Check, 
   Eye, 
   Code2, 
@@ -19,28 +17,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { GitHubProfile } from '@/lib/domain/types';
-import { statsDataUri } from '@/lib/infrastructure/svg/stats-card';
-import { topLangsDataUri } from '@/lib/infrastructure/svg/top-langs-card';
-import { pinDataUri } from '@/lib/infrastructure/svg/pin-card';
-import { snakeDataUri } from '@/lib/infrastructure/svg/snake-card';
-import { trophyDataUri } from '@/lib/infrastructure/svg/trophy-card';
+import type { GeneratedAsset } from '@/lib/domain/types';
 
 interface ReadmePreviewProps {
   markdown: string;
   username: string;
   isLoading?: boolean;
-  /** When provided, the preview uses client-side generated SVGs instead of external URLs */
-  profile?: GitHubProfile | null;
+  assets: GeneratedAsset[];
 }
 
-export function ReadmePreview({ markdown, username, isLoading, profile }: ReadmePreviewProps) {
+export function ReadmePreview({ markdown, username, isLoading, assets }: ReadmePreviewProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
   // previewTheme drives which variant of the adaptive images to show
   const [previewTheme, setPreviewTheme] = useState<'dark' | 'light'>('dark');
-  const [isFaithfulPreview, setIsFaithfulPreview] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -78,18 +69,6 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
     }
   }, [markdown]);
 
-  const handleDownload = useCallback(() => {
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${username}-README.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [markdown, username]);
-
   const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
@@ -105,7 +84,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
     }
   }, [markdown, username, handleCopy]);
 
-  const handlePrint = useCallback(() => {
+  const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -133,98 +112,15 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       printWindow.document.close();
       printWindow.print();
     }
-  }, [markdown, username, previewTheme]);
+  };
 
   // ── Core Markdown → HTML converter ──────────────────────────────────────────
   const renderMarkdown = (md: string, theme: 'dark' | 'light'): string => {
     const isDark = theme === 'dark';
-    const svgTheme = isDark ? 'tokyonight' : 'flat';
-
-    // ── 0. localUriMap no longer pre-generated to support multiple themes ──
-
     const resolveUrl = (url: string): string => {
-      if (isFaithfulPreview || !profile) return url;
-
-      // Extract theme from URL to match the template's specified theme
-      const themeMatch = url.match(/[?&]theme=([^&]+)/);
-      const urlTheme = themeMatch ? themeMatch[1] : svgTheme;
-      
-      const isStats = url.includes('/api/stats') || url.includes('github-readme-stats.vercel.app/api?') || url.includes('github-readme-stats-sigma-five.vercel.app/api?');
-      const isLangs = url.includes('/api/top-langs') || url.includes('github-readme-stats.vercel.app/api/top-langs') || url.includes('github-readme-stats-sigma-five.vercel.app/api/top-langs');
-      const isTrophy = url.includes('github-profile-trophy.vercel.app') || url.includes('github-profile-trophy-one.vercel.app') || url.includes('/api/trophies');
-      const isSnake = url.includes('/api/snake') || url.includes('github-contribution-grid-snake') || url.includes('snake.svg');
-      const isPin = url.includes('/api/pin') || url.includes('github-readme-stats.vercel.app/api/pin') || url.includes('github-readme-stats-sigma-five.vercel.app/api/pin');
-
-      if (isStats) {
-        const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
-        return statsDataUri({
-          username: profile.user.username,
-          theme: urlTheme,
-          stars: totalStars,
-          followers: profile.user.followers,
-          repos: profile.user.publicRepos,
-          showIcons: true,
-          hideBorder: true,
-        });
-      }
-      
-      if (isLangs) {
-        return topLangsDataUri({
-          username: profile.user.username,
-          languages: profile.topLanguages,
-          theme: urlTheme,
-          hideBorder: true,
-          layout: 'compact',
-        });
-      }
-
-      if (isTrophy) {
-        const totalStars = profile.repositories.reduce((s, r) => s + (r.stars || 0), 0);
-        return trophyDataUri({
-          username: profile.user.username,
-          theme: urlTheme,
-          stats: {
-            stars: totalStars,
-            commits: profile.user.publicRepos * 30,
-            prs: profile.user.publicRepos * 5,
-            issues: profile.user.publicRepos * 2,
-            followers: profile.user.followers,
-            repos: profile.user.publicRepos,
-          },
-          hideBorder: url.includes('no-frame=true') || url.includes('hide_border=true'),
-        });
-      }
-      
-      if (isSnake) {
-        return snakeDataUri({
-          username: profile.user.username,
-          theme: urlTheme,
-          hideBorder: true,
-        });
-      }
-
-      if (isPin) {
-        const pinMatch = url.match(/[?&]repo=([^&]+)/);
-        if (pinMatch) {
-          const repoName = pinMatch[1];
-          const repo = profile.repositories.find(r => r.name === repoName) || profile.pinnedRepos.find(r => r.name === repoName);
-          if (repo) {
-            return pinDataUri({
-              username: profile.user.username,
-              repo: repo.name,
-              description: repo.description,
-              language: repo.language,
-              stars: repo.stars,
-              forks: repo.forks,
-              theme: urlTheme,
-              hideBorder: true,
-              showOwner: true,
-            });
-          }
-        }
-      }
-      
-      return url;
+      const asset = assets.find((item) => item.path === url);
+      if (!asset) return url;
+      return `data:${asset.mimeType};charset=utf-8,${encodeURIComponent(asset.content)}`;
     };
 
     function inline(text: string): string {
@@ -237,9 +133,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
           (_match, alt, src, href) => `<a href="${href}" target="_blank" rel="noopener noreferrer"><img src="${resolveUrl(src)}" alt="${alt}" loading="lazy" onerror="this.style.opacity='0.3'" /></a>`)
         .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
           const resolvedSrc = resolveUrl(src);
-          const isStatsCard = src.includes('/api/') || src.includes('github-readme-stats') || src.includes('github-readme-stats-sigma-five')
-            || src.includes('github-profile-trophy') || src.includes('streak-stats') || src.includes('capsule-render')
-            || src.includes('shields.io') || src.includes('komarev');
+          const isStatsCard = src.startsWith('assets/');
           const classAttr = isStatsCard ? ' class="stats-card"' : '';
           return `<img src="${resolvedSrc}" alt="${alt}"${classAttr} loading="lazy" onerror="this.style.opacity='0.3'" />`;
         })
@@ -262,10 +156,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
       const rawSrc = isDark ? darkSrc : lightSrc;
       const src = resolveUrl(rawSrc);
       
-      const isCard = src.startsWith('data:') || rawSrc.includes('/api/')
-        || rawSrc.includes('github-readme-stats') || rawSrc.includes('github-readme-stats-sigma-five')
-        || rawSrc.includes('github-profile-trophy') || rawSrc.includes('streak-stats')
-        || rawSrc.includes('capsule-render') || rawSrc.includes('readme-typing-svg');
+      const isCard = src.startsWith('data:') || rawSrc.startsWith('assets/');
         
       const heightAttr = height ? ` height="${height}"` : '';
       const classAttr = isCard ? ' class="stats-card"' : '';
@@ -333,10 +224,7 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
   };
 
   // Memoize the rendered HTML so it only recomputes when markdown or theme changes
-  const renderedHtml = useMemo(
-    () => renderMarkdown(markdown, previewTheme),
-    [markdown, previewTheme, isFaithfulPreview]
-  );
+  const renderedHtml = renderMarkdown(markdown, previewTheme);
 
   // ── Preview background & text color per theme ────────────────────────────
   const previewBg  = previewTheme === 'dark'  ? 'bg-[#0d1117]' : 'bg-[#ffffff]';
@@ -390,27 +278,6 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
             </button>
           </div>
 
-          <div className="flex items-center space-x-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/60">
-            <label htmlFor="faithful-preview" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
-              Preview Real
-            </label>
-            <button
-              id="faithful-preview"
-              onClick={() => setIsFaithfulPreview(!isFaithfulPreview)}
-              className={cn(
-                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-                isFaithfulPreview ? "bg-primary" : "bg-input"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
-                  isFaithfulPreview ? "translate-x-4" : "translate-x-0"
-                )}
-              />
-            </button>
-          </div>
-
           <Button
             variant="outline"
             size="sm"
@@ -429,16 +296,6 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
                 Copiar
               </>
             )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            className="gap-2"
-            title="Descargar como archivo .md"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Descargar</span>
           </Button>
           <Button
             variant="outline"
@@ -481,20 +338,14 @@ export function ReadmePreview({ markdown, username, isLoading, profile }: Readme
         </div>
       </div>
 
-      {!isFaithfulPreview && activeTab === 'preview' && (
+      {activeTab === 'preview' && (
         <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-300">
           <div className="h-5 w-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
             <span className="text-blue-500 text-xs font-bold">i</span>
           </div>
           <div className="flex-1">
             <p className="text-xs text-blue-400 leading-relaxed">
-              <span className="font-semibold text-blue-300">Optimización de vista previa activa:</span> Se están usando SVGs locales. El README final usará URLs públicas de GitHub.
-              <button 
-                onClick={() => setIsFaithfulPreview(true)}
-                className="ml-2 underline hover:text-blue-300 transition-colors"
-              >
-                Cambiar a Preview Real
-              </button>
+              <span className="font-semibold text-blue-300">Vista autocontenida:</span> Los SVG mostrados son exactamente los recursos incluidos en el ZIP final.
             </p>
           </div>
         </div>

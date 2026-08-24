@@ -275,18 +275,15 @@ export function SocialLinksEditor({
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all hover:scale-105"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all hover:scale-105"
                   style={{ 
                     backgroundColor: `${link.color}20`,
                     color: link.color,
                     border: `1px solid ${link.color}40`
                   }}
                 >
-                  <img 
-                    src={`https://img.shields.io/badge/-${encodeURIComponent(platformInfo?.name || link.platform)}-${link.color.replace('#', '')}?style=flat&logo=${link.icon}&logoColor=white`}
-                    alt={platformInfo?.name}
-                    className="h-5"
-                  />
+                  <span aria-hidden="true">●</span>
+                  {platformInfo?.name || link.platform}
                 </a>
               );
             })}

@@ -5,6 +5,7 @@ import { Rocket, Download, CheckCircle2, ExternalLink, Github, AlertCircle } fro
 import { cn } from '@/lib/utils';
 import { getStoredToken } from '@/lib/infrastructure/github-api';
 import { type GenerateResult } from '@/lib/domain/types';
+import { downloadReadmeBundle } from '@/lib/utils/export-bundle';
 
 interface ActionButtonsProps {
   result: GenerateResult;
@@ -15,15 +16,7 @@ export function ActionButtons({ result }: ActionButtonsProps) {
 
   const handleDownload = useCallback(() => {
     if (!result) return;
-    const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${result.profile.user.username}-README.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadReadmeBundle(result);
   }, [result]);
 
   const handleCopy = useCallback(async () => {
@@ -50,8 +43,11 @@ export function ActionButtons({ result }: ActionButtonsProps) {
           className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
         >
           <Download className="h-4 w-4 text-primary" />
-          Descargar README.md
+          Descargar ZIP completo
         </button>
+        <p className="px-2 text-[11px] leading-relaxed text-muted-foreground">
+          Incluye README.md, {result.assets.length} SVG locales y la guía de instalación.
+        </p>
 
         {/* Copy button */}
         <button
@@ -66,6 +62,9 @@ export function ActionButtons({ result }: ActionButtonsProps) {
           <CheckCircle2 className={cn('h-4 w-4', copySuccess ? 'text-emerald-500' : 'text-muted-foreground')} />
           {copySuccess ? '¡Copiado!' : 'Copiar Markdown'}
         </button>
+        <p className="px-2 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+          El Markdown copiado necesita también la carpeta assets/ incluida en el ZIP.
+        </p>
 
         <a
           href={`https://github.com/${result.profile.user.username}`}

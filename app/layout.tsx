@@ -1,17 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
-import { AnalyticsWrapper } from '@/components/analytics-wrapper'
 import './globals.css'
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
-});
-
-const jetbrainsMono = JetBrains_Mono({ 
-  subsets: ["latin"],
-  variable: '--font-jetbrains',
-});
 
 export const metadata: Metadata = {
   title: 'GitHub Profile Generator | Auto-generate stunning README profiles',
@@ -60,9 +48,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         {children}
-        <AnalyticsWrapper />
       </body>
     </html>
   )

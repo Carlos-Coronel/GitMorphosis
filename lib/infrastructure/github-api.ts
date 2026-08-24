@@ -27,6 +27,10 @@ const GH_GRAPHQL = 'https://api.github.com/graphql';
 
 const TOKEN_SESSION_KEY = 'gitmorphosis_pat';
 
+export function isValidGitHubUsername(username: string): boolean {
+  return /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(username.trim());
+}
+
 export function saveToken(token: string): void {
   if (typeof window !== 'undefined') {
     if (token) {
@@ -167,7 +171,7 @@ async function ghFetch<T>(path: string, token?: string | null): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function ghGraphQL(query: string, variables: Record<string, unknown>, token: string): Promise<GQLPinnedReposResponse> {
+async function ghGraphQL<T = GQLPinnedReposResponse>(query: string, variables: Record<string, unknown>, token: string): Promise<T> {
   const res = await fetch(GH_GRAPHQL, {
     method: 'POST',
     headers: {
@@ -181,7 +185,7 @@ async function ghGraphQL(query: string, variables: Record<string, unknown>, toke
     throw new Error(`GraphQL request failed: ${res.status}`);
   }
 
-  return res.json() as Promise<GQLPinnedReposResponse>;
+  return res.json() as Promise<T>;
 }
 
 // ── Language aggregation ─────────────────────────────────────────────────────
@@ -242,6 +246,51 @@ const PINNED_REPOS_QUERY = `
   }
 `;
 
+const CONTRIBUTIONS_QUERY = `
+  query GetContributions($username: String!) {
+    user(login: $username) {
+      contributionsCollection {
+        contributionCalendar {
+          totalContributions
+          weeks { contributionDays { date contributionCount } }
+        }
+      }
+    }
+  }
+`;
+
+function calculateStreaks(contributionsByDay: Record<string, number>): Pick<ContributionStats, 'currentStreak' | 'longestStreak'> {
+  const active = Object.entries(contributionsByDay).filter(([, count]) => count > 0).map(([date]) => date).sort();
+  if (!active.length) return { currentStreak: 0, longestStreak: 0 };
+  let longestStreak = 1;
+  let running = 1;
+  for (let index = 1; index < active.length; index++) {
+    const previous = new Date(`${active[index - 1]}T00:00:00Z`).getTime();
+    const current = new Date(`${active[index]}T00:00:00Z`).getTime();
+    running = current - previous === 86_400_000 ? running + 1 : 1;
+    longestStreak = Math.max(longestStreak, running);
+  }
+  const last = new Date(`${active.at(-1)}T00:00:00Z`).getTime();
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const currentStreak = todayUtc - last <= 86_400_000 ? running : 0;
+  return { currentStreak, longestStreak };
+}
+
+async function fetchContributionStats(username: string, token: string): Promise<ContributionStats> {
+  try {
+    const response = await ghGraphQL<{
+      data?: { user?: { contributionsCollection?: { contributionCalendar?: { totalContributions: number; weeks: { contributionDays: { date: string; contributionCount: number }[] }[] } } } };
+    }>(CONTRIBUTIONS_QUERY, { username }, token);
+    const calendar = response.data?.user?.contributionsCollection?.contributionCalendar;
+    if (!calendar) throw new Error('Calendario no disponible');
+    const contributionsByDay = Object.fromEntries(calendar.weeks.flatMap((week) => week.contributionDays.map((day) => [day.date, day.contributionCount])));
+    return { totalContributions: calendar.totalContributions, contributionsByDay, ...calculateStreaks(contributionsByDay) };
+  } catch {
+    return { totalContributions: 0, currentStreak: 0, longestStreak: 0, contributionsByDay: {} };
+  }
+}
+
 async function fetchPinnedRepos(username: string, token: string): Promise<Repository[]> {
   try {
     const response = await ghGraphQL(PINNED_REPOS_QUERY, { username }, token);
@@ -283,6 +332,7 @@ export async function fetchGitHubProfile(
   token?: string | null
 ): Promise<GitHubProfile> {
   const cleanUsername = username.trim();
+  if (!isValidGitHubUsername(cleanUsername)) throw new Error('Formato de nombre de usuario de GitHub inválido');
   const effectiveToken = token ?? getStoredToken();
 
   // Parallel fetch: user profile + repos
@@ -343,12 +393,13 @@ export async function fetchGitHubProfile(
   }
 
   // ── Contribution stats: approximated (requires GraphQL + token for real data) ─
-  const contributionStats: ContributionStats = {
+  let contributionStats: ContributionStats = {
     totalContributions: 0,
     currentStreak: 0,
     longestStreak: 0,
     contributionsByDay: {},
   };
+  if (effectiveToken) contributionStats = await fetchContributionStats(cleanUsername, effectiveToken);
 
   return {
     user,

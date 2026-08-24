@@ -91,6 +91,13 @@ export interface GeneratedReadme {
   templateId: string;
   generatedAt: Date;
   profile: GitHubProfile;
+  assets: GeneratedAsset[];
+}
+
+export interface GeneratedAsset {
+  path: `assets/${string}`;
+  content: string;
+  mimeType: 'image/svg+xml' | 'text/plain';
 }
 
 // Tipos de error para mejor manejo de errores
@@ -220,6 +227,7 @@ export interface GenerateResult {
   templateId: string;
   generatedAt: string;
   profile: ProfileData;
+  assets: GeneratedAsset[];
 }
 
 export interface SocialLink {
@@ -235,4 +243,3 @@ export interface GeneratorConfig {
   includeSnake: boolean;
   socialLinks: SocialLink[];
 }
-

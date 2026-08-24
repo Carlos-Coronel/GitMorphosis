@@ -3,8 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { fetchGitHubProfile, getStoredToken } from '@/lib/infrastructure/github-api';
 import { createReadmeBuilder } from '@/lib/application/readme-builder';
-import { GitHubProfile, Template, ProfileData, GenerateResult, GeneratorConfig, SocialLink } from '@/lib/domain/types';
-import { getCachedServiceHealth, type ServiceStatus } from '@/lib/infrastructure/service-health';
+import { GitHubProfile, GenerateResult, GeneratorConfig } from '@/lib/domain/types';
 
 export interface UseProfileGeneratorOptions {
   onGenerateSuccess?: () => void;
@@ -32,9 +31,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     socialLinks: [],
   });
 
-  const [serviceHealth, setServiceHealth] = useState<ServiceStatus[]>([]);
-  const [isGitHubPages, setIsGitHubPages] = useState(false);
-  
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const selectedTemplateRef = useRef('portfolio');
   const profileCacheRef = useRef<{ username: string; profile: GitHubProfile } | null>(null);
@@ -92,13 +88,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
       setLoadingStep('Generando README...');
       const builder = createReadmeBuilder();
 
-      const serviceStatus: Record<string, boolean> = {};
-      serviceHealth.forEach((s) => {
-        serviceStatus[s.name] = s.isUp;
-      });
-
       const generatedResult = builder.build(profile, selectedTemplateRef.current, {
-        serviceStatus,
         includeSnake: currentConfig.includeSnake,
       });
 
@@ -112,6 +102,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
           repositoryCount: profile.repositories.length,
           pinnedCount: profile.pinnedRepos.length,
         },
+        assets: generatedResult.assets,
       });
 
       // Refresh rate limit after API calls
@@ -123,7 +114,7 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
       setIsLoading(false);
       setLoadingStep('');
     }
-  }, [isGitHubPages, serviceHealth, onGenerateSuccess]);
+  }, [onGenerateSuccess]);
 
   const updateConfig = useCallback((newConfig: Partial<GeneratorConfig>) => {
     setConfig((prev) => {
@@ -168,20 +159,10 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
 
   // Init
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsGitHubPages(window.location.hostname.includes('github.io'));
-    }
-    getCachedServiceHealth().then(setServiceHealth);
-
-    const interval = setInterval(() => {
-      getCachedServiceHealth().then(setServiceHealth);
-    }, 120000);
-
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      clearInterval(interval);
     };
   }, []);
 
@@ -193,8 +174,6 @@ export function useProfileGenerator(options?: UseProfileGeneratorOptions) {
     result,
     currentProfile,
     currentUsername,
-    serviceHealth,
-    isGitHubPages,
     config,
     updateConfig,
     handleGenerate,

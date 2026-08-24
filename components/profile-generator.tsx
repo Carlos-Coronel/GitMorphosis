@@ -7,7 +7,6 @@ import { ProfileStats } from '@/components/profile-stats';
 import { useProfileGenerator } from '@/hooks/use-profile-generator';
 import { useRateLimit } from '@/hooks/use-rate-limit';
 import { GeneratorHero } from '@/components/generator/generator-hero';
-import { ServiceStatus } from '@/components/generator/service-status';
 import { AdvancedSettings } from '@/components/generator/advanced-settings';
 import { ActionButtons } from '@/components/generator/action-buttons';
 import { LoadingState } from '@/components/generator/loading-state';
@@ -25,9 +24,6 @@ export function ProfileGenerator() {
     loadingStep,
     error,
     result,
-    currentProfile,
-    serviceHealth,
-    isGitHubPages,
     config,
     updateConfig,
     handleGenerate,
@@ -40,7 +36,10 @@ export function ProfileGenerator() {
       <div className="container mx-auto px-4 py-8 md:py-12">
         <GeneratorHero />
         <div className="max-w-5xl mx-auto space-y-8">
-          <ServiceStatus serviceHealth={serviceHealth} rateLimit={rateLimit} />
+          <div className="glass-card rounded-xl px-4 py-3 text-sm text-muted-foreground" role="status">
+            Motor local activo · Solo se consulta la API oficial de GitHub
+            {rateLimit && <span className="ml-2 text-primary">{rateLimit.remaining}/{rateLimit.limit} solicitudes disponibles</span>}
+          </div>
 
           <div className="fade-in-up stagger-4 opacity-0">
             <UsernameInput onSubmit={handleGenerate} isLoading={isLoading} />
@@ -97,7 +96,7 @@ export function ProfileGenerator() {
                   markdown={result.markdown}
                   username={result.profile.user.username}
                   isLoading={isLoading}
-                  profile={currentProfile}
+                  assets={result.assets}
                 />
               </main>
             </div>
